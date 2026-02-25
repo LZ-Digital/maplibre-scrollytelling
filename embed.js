@@ -35,7 +35,6 @@
   var desiredScrollTop = 0;
   var allowScrollThrough = false;
   var scrollLockApplying = false;
-  var leaveBuffer = 40;
 
   function getScrollTop() {
     return window.pageYOffset !== undefined
@@ -55,15 +54,13 @@
 
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
-    if (embedReached) {
-      if (rect.bottom <= topOffset || rect.top > topOffset + leaveBuffer) {
-        embedReached = false;
-      }
+    if (rect.bottom <= topOffset) {
+      embedReached = false;
+    } else if (rect.top <= topOffset) {
+      embedReached = true;
+      desiredScrollTop = getScrollTop();
     } else {
-      if (rect.top <= topOffset && rect.bottom > topOffset) {
-        embedReached = true;
-        desiredScrollTop = getScrollTop();
-      }
+      embedReached = false;
     }
   }
 
