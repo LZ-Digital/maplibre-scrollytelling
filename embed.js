@@ -100,12 +100,12 @@
 
     var rect = container.getBoundingClientRect();
 
-    /* Embed „erreicht“, sobald es sichtbar ist (nicht erst wenn Top ≤ topOffset). Stopp, sobald es ganz raus ist. */
+    /* Embed „erreicht“ erst, wenn sein oberer Rand die Trigger-Linie erreicht (topOffset px unter Viewport-Top). So scrollt die Seite normal bis dahin. */
     if (rect.bottom <= topOffset) {
 
       embedReached = false;
 
-    } else if (rect.top < window.innerHeight) {
+    } else if (rect.top <= topOffset) {
 
       embedReached = true;
 
@@ -145,9 +145,10 @@
     if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'scroll', deltaY: deltaY }, iframeOrigin);
   }
 
-  /* Desktop: Mausrad auf dem Overlay – Cursor über Embed: nur hier scrollen, sonst Seite durchlassen */
+  /* Desktop: Mausrad auf dem Overlay – nur abfangen, wenn Embed „erreicht“ ist, sonst Seite durchscrollen lassen */
   overlay.addEventListener('wheel', function (e) {
-    if (!shouldCaptureWheel(e.deltaY)) return;
+    updateEmbedReached();
+    if (!embedReached || !shouldCaptureWheel(e.deltaY)) return;
     e.preventDefault();
     e.stopPropagation();
     forwardWheel(e.deltaY);
