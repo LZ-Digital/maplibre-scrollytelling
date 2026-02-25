@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrollytelling – Heatmap Deutschland</title>
+  <link href="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+
+    .scroll-container {
+      position: relative;
+    }
+
+    #map {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 0;
+    }
+
+    .steps {
+      position: relative;
+      z-index: 1;
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 0 1rem 60vh 1rem;
+    }
+
+    .step {
+      margin-bottom: 80vh;
+      padding: 1.25rem 1.5rem;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      border-radius: 8px;
+    }
+
+    .step:first-child { margin-top: 2rem; }
+    .step:last-child { margin-bottom: 2rem; }
+
+    .step h2 { margin: 0 0 0.5rem; font-size: 1.25rem; color: #1a1a1a; }
+    .step p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: #444; }
+
+    .step.is-active { box-shadow: 0 6px 28px rgba(0,0,0,0.18); }
+  </style>
+</head>
+<body>
+  <div class="scroll-container">
+    <div id="map"></div>
+    <div class="steps">
+      <div class="step" data-scene="overview">
+        <h2>Überblick</h2>
+        <p>Die Heatmap zeigt beispielhafte Standortdaten in Deutschland. Dichte und Intensität werden farblich dargestellt.</p>
+      </div>
+      <div class="step" data-scene="munich">
+        <h2>München</h2>
+        <p>Hohe Konzentration im Zentrum: Marienplatz, Maxvorstadt und Schwabing.</p>
+      </div>
+      <div class="step" data-scene="berlin">
+        <h2>Berlin</h2>
+        <p>Schwerpunkt Mitte: Brandenburger Tor, Alexanderplatz und Kreuzberg.</p>
+      </div>
+      <div class="step" data-scene="rhein-ruhr">
+        <h2>Rhein-Ruhr</h2>
+        <p>Düsseldorf, Köln und Essen – Ballungsraum mit mehreren Hotspots.</p>
+      </div>
+      <div class="step" data-scene="hamburg">
+        <h2>Hamburg</h2>
+        <p>Zentrum um Rathaus, HafenCity und St. Pauli.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/scrollama/3.2.0/scrollama.min.js"></script>
+  <script>
+    (function () {
+      var map;
+      var scenes = {
+        overview: { center: [10.5, 51.2], zoom: 5.2 },
+        munich:   { center: [11.576, 48.137], zoom: 11.5 },
+        berlin:   { center: [13.405, 52.52], zoom: 11.5 },
+        'rhein-ruhr': { center: [6.95, 51.15], zoom: 8.5 },
+        hamburg:  { center: [9.99, 53.55], zoom: 11.5 }
+      };
+
+      map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://demotiles.maplibre.org/style.json',
+        center: scenes.overview.center,
+        zoom: scenes.overview.zoom,
+        scrollZoom: false
+      });
+
+      map.on('load', function () {
+        map.addSource('heatmap-points', {
+          type: 'geojson',
+          data: 'data/heatmap-data.geojson'
+        });
+
+        map.addLayer({
+          id: 'heatmap',
+          type: 'heatmap',
+          source: 'heatmap-points',
+          maxzoom: 14,
+          paint: {
+            'heatmap-weight': ['get', 'intensity'],
+            'heatmap-intensity': [
+              'interpolate', ['linear'], ['zoom'],
+              5, 0.4, 10, 0.8, 14, 1.2
+            ],
+            'heatmap-color': [
+              'interpolate', ['linear'], ['heatmap-density'],
+              0, 'rgba(0,0,255,0)',
+              0.2, 'rgba(100,150,255,0.5)',
+              0.4, 'rgba(50,200,150,0.6)',
+              0.6, 'rgba(255,220,0,0.7)',
+              0.8, 'rgba(255,150,0,0.8)',
+              1, 'rgba(255,50,0,0.9)'
+            ],
+            'heatmap-radius': [
+              'interpolate', ['linear'], ['zoom'],
+              5, 8, 10, 14, 14, 22
+            ],
+            'heatmap-opacity': 0.85
+          }
+        });
+
+        initScrollama();
+      });
+
+      function initScrollama() {
+        var scroller = scrollama();
+
+        scroller
+          .setup({
+            step: '.step',
+            offset: 0.5
+          })
+          .onStepEnter(function (response) {
+            var el = response.element;
+            var sceneId = el.getAttribute('data-scene');
+            document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('is-active'); });
+            el.classList.add('is-active');
+            if (sceneId && scenes[sceneId]) {
+              map.flyTo({
+                center: scenes[sceneId].center,
+                zoom: scenes[sceneId].zoom,
+                duration: 1800,
+                essential: true
+              });
+            }
+          });
+
+        window.addEventListener('resize', scroller.resize);
+      }
+    })();
+  </script>
+</body>
+</html>
