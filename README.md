@@ -84,8 +84,8 @@ Inhalt der Seite durch **eine** URL ersetzen (`https://IHR-HOST/pfad/zur/visuali
 
 ### Variante 2: Script + Container (wie Datawrapper)
 
-Container-Div mit fester Mindesthöhe, Script lädt die Seite in ein iframe und fügt es in den Container ein. `data-target` = Selektor des Containers, `data-src` = URL der Visualisierung (Ordner oder `index.html`).  
-**Scroll-Capture:** Beim Scrollen über dem Embed wird zuerst innerhalb des iframes gescrollt; erst am oberen/unteren Ende des Inhalts scrollt die einbettende Seite weiter.
+Container-Div mit fester Mindesthöhe, Script lädt die Seite in ein iframe und fügt es in den Container ein. `data-target` = Selektor des Containers, `data-src` = URL der Visualisierung (Ordner oder `index.html`). Optional: `data-offset-top="100"` = Versatz in px (z. B. Höhe eines Sticky-Headers), ab dem das Embed als „erreicht“ gilt (Standard: 100).  
+**Scroll-Capture:** Beim Scrollen der Seite wird zuerst die Seite gescrollt, bis das Embed den oberen Rand (minus Versatz) erreicht; dann scrollt nur noch im Embed, bis dessen Ende – danach scrollt die Seite wieder.
 
 ```html
 <div style="min-height: 700px" id="maplibre-scrollytelling-embed"></div>
