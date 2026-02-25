@@ -158,7 +158,8 @@
 
 
   <script src="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.js"></script>
-
+  <script src="https://unpkg.com/pmtiles@4/dist/pmtiles.js"></script>
+  <script src="https://unpkg.com/@protomaps/basemaps@5/dist/basemaps.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/scrollama/3.2.0/scrollama.min.js"></script>
 
   <script>
@@ -181,13 +182,31 @@
 
       };
 
+      // Protomaps: PMTiles-Protokoll für MapLibre registrieren
+      var protocol = new pmtiles.Protocol();
+      maplibregl.addProtocol('pmtiles', protocol.tile);
 
+      // Protomaps Basemap – Dataviz White, deutsche Beschriftung
+      var protomapsPmtilesUrl = 'https://r2-public.protomaps.com/protomaps-sample-datasets/protomaps-basemap-opensource-20230408.pmtiles';
+      var protomapsStyle = {
+        version: 8,
+        glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+        sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/white',
+        sources: {
+          protomaps: {
+            type: 'vector',
+            url: 'pmtiles://' + protomapsPmtilesUrl,
+            attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
+          }
+        },
+        layers: basemaps.layers('protomaps', basemaps.namedFlavor('white'), { lang: 'de' })
+      };
 
       map = new maplibregl.Map({
 
         container: 'map',
 
-        style: 'https://tiles.openfreemap.org/styles/bright',
+        style: protomapsStyle,
 
         center: scenes.overview.center,
 
