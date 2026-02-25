@@ -4,6 +4,7 @@
  * Scroll-Capture: Sobald das Embed beim Scrollen der Seite erreicht wird, scrollt weiterhin
  * nur noch im Embed – unabhängig von der Cursor-Position. Am Ende des Embeds scrollt die
  * umgebende Seite wieder.
+ * Optional: data-offset-top="100" für Versatz nach unten (z. B. Sticky-Header-Höhe in px).
  */
 (function () {
   var script = document.currentScript;
@@ -11,6 +12,8 @@
 
   var targetSelector = script.getAttribute('data-target');
   var src = script.getAttribute('data-src');
+  var topOffset = parseInt(script.getAttribute('data-offset-top'), 10);
+  if (isNaN(topOffset)) topOffset = 100;
   if (!targetSelector || !src) return;
 
   var container = document.querySelector(targetSelector);
@@ -38,9 +41,9 @@
 
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
-    if (rect.bottom <= 0) {
+    if (rect.bottom <= topOffset) {
       embedReached = false;
-    } else if (rect.top <= 0) {
+    } else if (rect.top <= topOffset) {
       embedReached = true;
     } else {
       embedReached = false;
