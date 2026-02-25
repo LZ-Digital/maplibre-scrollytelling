@@ -6,6 +6,7 @@ Demonstrations-Prototyp für eine scrollgesteuerte Kartenvisualisierung: Heatmap
 
 - **MapLibre GL JS** – Karte und Heatmap-Layer
 - **Scrollama.js** – Scrollytelling (Step-Trigger beim Scrollen)
+- **Kartenkacheln:** [OpenFreeMap](https://openfreemap.org/) (Style „Bright“) – freie Vektorkarten mit Straßen, Flächen und Gebäuden, ohne API-Key.
 - Kein Build-Schritt; Einbindung im CMS über statische Dateien möglich (z.B. iframe oder eingebettete Assets).
 
 ## Projektstruktur
