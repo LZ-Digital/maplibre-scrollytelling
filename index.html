@@ -7,17 +7,23 @@
   <link href="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.css" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { 
+      margin: 0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      overflow-x: hidden;
+      background-color: #f0f0f0;
+    }
 
     .scroll-container {
       position: relative;
+      width: 100%;
     }
 
     #map {
       position: sticky;
       top: 0;
       width: 100%;
-      height: 100vh;
+      height: 100vh; /* Nutzt die volle Höhe des Iframes */
       z-index: 0;
     }
 
@@ -26,24 +32,27 @@
       z-index: 1;
       max-width: 420px;
       margin: 0 auto;
-      padding: 0 1rem 60vh 1rem;
+      /* Padding unten ist kritisch, damit der letzte Step über die Mitte scrollen kann */
+      padding: 0 1rem 100vh 1rem;
     }
 
     .step {
-      margin-bottom: 80vh;
-      padding: 1.25rem 1.5rem;
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-      border-radius: 8px;
+      margin-bottom: 90vh; /* Großer Abstand für sauberes Scrollytelling */
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      transition: opacity 0.3s ease;
+      opacity: 0.3;
     }
 
-    .step:first-child { margin-top: 2rem; }
-    .step:last-child { margin-bottom: 2rem; }
+    .step.is-active { 
+      opacity: 1;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+    }
 
-    .step h2 { margin: 0 0 0.5rem; font-size: 1.25rem; color: #1a1a1a; }
-    .step p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: #444; }
-
-    .step.is-active { box-shadow: 0 6px 28px rgba(0,0,0,0.18); }
+    .step h2 { margin: 0 0 0.75rem; font-size: 1.4rem; color: #111; }
+    .step p { margin: 0; font-size: 1rem; line-height: 1.6; color: #333; }
   </style>
 </head>
 <body>
@@ -79,52 +88,44 @@
     (function () {
       var map;
       var scenes = {
-        overview: { center: [10.5, 51.2], zoom: 5.2 },
+        overview: { center: [10.5, 51.2], zoom: 5.5 },
         munich:   { center: [11.576, 48.137], zoom: 11.5 },
         berlin:   { center: [13.405, 52.52], zoom: 11.5 },
-        'rhein-ruhr': { center: [6.95, 51.15], zoom: 8.5 },
+        'rhein-ruhr': { center: [6.95, 51.15], zoom: 9.0 },
         hamburg:  { center: [9.99, 53.55], zoom: 11.5 }
       };
 
+      // Map Initialisierung
       map = new maplibregl.Map({
         container: 'map',
         style: 'https://tiles.openfreemap.org/styles/bright',
         center: scenes.overview.center,
         zoom: scenes.overview.zoom,
-        scrollZoom: false
+        scrollZoom: false,
+        attributionControl: false
       });
 
       map.on('load', function () {
+        // Beispiel-Quelle hinzufügen (Heatmap)
         map.addSource('heatmap-points', {
           type: 'geojson',
-          data: 'data/heatmap-data.geojson'
+          data: 'https://maplibre.org/maplibre-gl-js/docs/assets/earthquakes.geojson' // Beispiel-URL
         });
 
         map.addLayer({
           id: 'heatmap',
           type: 'heatmap',
           source: 'heatmap-points',
-          maxzoom: 14,
           paint: {
-            'heatmap-weight': ['get', 'intensity'],
-            'heatmap-intensity': [
-              'interpolate', ['linear'], ['zoom'],
-              5, 0.4, 10, 0.8, 14, 1.2
-            ],
+            'heatmap-weight': 1,
+            'heatmap-intensity': 1,
             'heatmap-color': [
               'interpolate', ['linear'], ['heatmap-density'],
-              0, 'rgba(0,0,255,0)',
-              0.2, 'rgba(100,150,255,0.5)',
-              0.4, 'rgba(50,200,150,0.6)',
-              0.6, 'rgba(255,220,0,0.7)',
-              0.8, 'rgba(255,150,0,0.8)',
-              1, 'rgba(255,50,0,0.9)'
+              0, 'rgba(0,0,255,0)', 0.2, 'royalblue', 0.4, 'cyan', 
+              0.6, 'lime', 0.8, 'yellow', 1, 'red'
             ],
-            'heatmap-radius': [
-              'interpolate', ['linear'], ['zoom'],
-              5, 8, 10, 14, 14, 22
-            ],
-            'heatmap-opacity': 0.85
+            'heatmap-radius': 15,
+            'heatmap-opacity': 0.7
           }
         });
 
@@ -137,18 +138,20 @@
         scroller
           .setup({
             step: '.step',
-            offset: 0.5
+            offset: 0.5, // Trigger in der Bildschirmmitte
+            debug: false
           })
           .onStepEnter(function (response) {
             var el = response.element;
             var sceneId = el.getAttribute('data-scene');
-            document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('is-active'); });
+            
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
             el.classList.add('is-active');
+
             if (sceneId && scenes[sceneId]) {
               map.flyTo({
-                center: scenes[sceneId].center,
-                zoom: scenes[sceneId].zoom,
-                duration: 1800,
+                ...scenes[sceneId],
+                duration: 2000,
                 essential: true
               });
             }
@@ -157,31 +160,31 @@
         window.addEventListener('resize', scroller.resize);
       }
 
+      // Kommunikation mit dem Parent-Fenster
       if (window !== window.top) {
+        // Empfange Scroll-Events vom Parent
         window.addEventListener('message', function (e) {
-          if (!e.data || e.data.type !== 'scroll' || typeof e.data.deltaY !== 'number') return;
-          window.scrollBy(0, e.data.deltaY);
+          if (e.data.type === 'scroll' && typeof e.data.deltaY === 'number') {
+            window.scrollBy(0, e.data.deltaY);
+            sendScrollState();
+          }
         });
+
+        // Melde Scroll-Zustand an Parent
         function sendScrollState() {
-          var y = window.scrollY;
+          var y = window.pageYOffset || document.documentElement.scrollTop;
           var h = window.innerHeight;
           var docH = document.documentElement.scrollHeight;
+
           window.parent.postMessage({
             type: 'scrollState',
-            atTop: y <= 2,
-            atBottom: y + h >= docH - 2
+            atTop: y <= 5,
+            atBottom: (y + h) >= (docH - 5)
           }, '*');
         }
-        var scrollTick;
-        window.addEventListener('scroll', function () {
-          if (scrollTick) return;
-          scrollTick = requestAnimationFrame(function () {
-            sendScrollState();
-            scrollTick = null;
-          });
-        }, { passive: true });
-        if (document.readyState === 'complete') sendScrollState();
-        else window.addEventListener('load', sendScrollState);
+
+        window.addEventListener('scroll', sendScrollState, { passive: true });
+        window.addEventListener('load', sendScrollState);
       }
     })();
   </script>
