@@ -1,101 +1,59 @@
 <!DOCTYPE html>
-
 <html lang="de">
-
 <head>
-
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Scrollytelling – Heatmap Deutschland</title>
-
   <link href="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.css" rel="stylesheet">
-
   <style>
-
     * { box-sizing: border-box; }
-
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 
-
-
+    /* Scrollama: Sticky Graphic (Overlay) – position: sticky für die Grafik, Text darüber (README + Beispiel sticky-overlay) */
     .scroll-container {
-
       position: relative;
-
     }
 
-
-
-    /* Sticky-Overlay-Pattern (Scrollama): Karte bleibt fixiert, Steps laufen darüber. Höhe wird per JS gesetzt (vh vermeiden). */
     #map {
-
       position: sticky;
-
       top: 0;
-
+      left: 0;
       width: 100%;
-
-      height: 100vh; /* Fallback; wird in setStepSpacing() durch px ersetzt */
-
+      margin: 0;
+      transform: translate3d(0, 0, 0);
+      background-color: #e0e0e0;
       z-index: 0;
-
-      will-change: transform;
-
+      height: 500px; /* wird in handleResize() durch px ersetzt; vh vermeiden laut README Tips */
     }
-
-
 
     .steps {
-
       position: relative;
-
       z-index: 1;
-
       max-width: 420px;
-
       margin: 0 auto;
-
-      padding: 0 1rem var(--steps-padding-bottom, 60vh) 1rem;
-
+      padding: 0 1rem;
     }
-
-
 
     .step {
-
-      margin-bottom: var(--step-spacing, 80vh);
-
+      margin: 0 auto 2rem auto;
       padding: 1.25rem 1.5rem;
-
       background: rgba(255, 255, 255, 0.96);
-
       box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-
       border-radius: 8px;
-
+      min-height: 300px; /* wird in handleResize() gesetzt */
     }
 
-
-
-    .step:first-child { margin-top: 2rem; }
-
-    .step:last-child { margin-bottom: 2rem; }
-
-
+    .step:last-child {
+      margin-bottom: 0;
+    }
 
     .step h2 { margin: 0 0 0.5rem; font-size: 1.25rem; color: #1a1a1a; }
-
     .step p { margin: 0; font-size: 0.95rem; line-height: 1.5; color: #444; }
 
+    .step.is-active {
+      box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+    }
 
-
-    .step.is-active { box-shadow: 0 6px 28px rgba(0,0,0,0.18); }
-
-
-
-    /* Mobile: weniger Abstand, bessere Lesbarkeit (px-Werte werden per JS gesetzt, um vh-Resize zu vermeiden) */
     @media (max-width: 640px) {
       .steps { max-width: 100%; padding-left: 0.75rem; padding-right: 0.75rem; }
       .step { padding: 1rem 1.25rem; }
@@ -103,353 +61,180 @@
       .step p { font-size: 0.9rem; }
     }
   </style>
-
 </head>
-
 <body>
-
-  <div class="scroll-container">
-
+  <div class="scroll-container" id="scrolly">
     <div id="map"></div>
-
     <div class="steps">
-
       <div class="step" data-step="overview" data-scene="overview">
-
         <h2>Überblick</h2>
-
         <p>Die Heatmap zeigt beispielhafte Standortdaten in Deutschland. Dichte und Intensität werden farblich dargestellt.</p>
-
       </div>
-
       <div class="step" data-step="munich" data-scene="munich">
-
         <h2>München</h2>
-
         <p>Hohe Konzentration im Zentrum: Marienplatz, Maxvorstadt und Schwabing.</p>
-
       </div>
-
       <div class="step" data-step="berlin" data-scene="berlin">
-
         <h2>Berlin</h2>
-
         <p>Schwerpunkt Mitte: Brandenburger Tor, Alexanderplatz und Kreuzberg.</p>
-
       </div>
-
       <div class="step" data-step="rhein-ruhr" data-scene="rhein-ruhr">
-
         <h2>Rhein-Ruhr</h2>
-
         <p>Düsseldorf, Köln und Essen – Ballungsraum mit mehreren Hotspots.</p>
-
       </div>
-
       <div class="step" data-step="hamburg" data-scene="hamburg">
-
         <h2>Hamburg</h2>
-
         <p>Zentrum um Rathaus, HafenCity und St. Pauli.</p>
-
       </div>
-
     </div>
-
   </div>
-
-
 
   <script src="https://unpkg.com/maplibre-gl@3/dist/maplibre-gl.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/scrollama/3.2.0/scrollama.min.js"></script>
-
   <script>
-
     (function () {
-
       var map;
-
-      /* Scrollama-Tipp: vh vermeiden, da sich die Viewport-Höhe (z. B. durch Browser-UI) ändern und Resize auslösen kann. Abstände in px setzen. */
-      function setStepSpacing() {
-
-        var h = window.innerHeight;
-
-        var isNarrow = window.matchMedia('(max-width: 640px)').matches;
-
-        var spacing = isNarrow ? Math.floor(h * 0.6) : Math.floor(h * 0.8);
-
-        var paddingBottom = isNarrow ? Math.floor(h * 0.5) : Math.floor(h * 0.6);
-
-        var root = document.documentElement;
-
-        root.style.setProperty('--step-spacing', spacing + 'px');
-
-        root.style.setProperty('--steps-padding-bottom', paddingBottom + 'px');
-
-        var mapEl = document.getElementById('map');
-
-        if (mapEl) mapEl.style.height = h + 'px';
-
-      }
-
-      setStepSpacing();
-
+      var scroller;
       var scenes = {
-
-        overview: { center: [10.5, 51.2], zoom: 5.2 },
-
-        munich:   { center: [11.576, 48.137], zoom: 11.5 },
-
-        berlin:   { center: [13.405, 52.52], zoom: 11.5 },
-
+        overview:     { center: [10.5, 51.2], zoom: 5.2 },
+        munich:       { center: [11.576, 48.137], zoom: 11.5 },
+        berlin:       { center: [13.405, 52.52], zoom: 11.5 },
         'rhein-ruhr': { center: [6.95, 51.15], zoom: 8.5 },
-
-        hamburg:  { center: [9.99, 53.55], zoom: 11.5 }
-
+        hamburg:      { center: [9.99, 53.55], zoom: 11.5 }
       };
 
       map = new maplibregl.Map({
-
         container: 'map',
-
         style: 'https://tiles.openfreemap.org/styles/positron',
-
         center: scenes.overview.center,
-
         zoom: scenes.overview.zoom,
-
         scrollZoom: false
-
       });
-
-
 
       map.on('load', function () {
-
         map.addSource('heatmap-points', {
-
           type: 'geojson',
-
           data: 'data/heatmap-data.geojson'
-
         });
-
-
-
         map.addLayer({
-
           id: 'heatmap',
-
           type: 'heatmap',
-
           source: 'heatmap-points',
-
           maxzoom: 14,
-
           paint: {
-
             'heatmap-weight': ['get', 'intensity'],
-
-            'heatmap-intensity': [
-
-              'interpolate', ['linear'], ['zoom'],
-
-              5, 0.4, 10, 0.8, 14, 1.2
-
-            ],
-
+            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 5, 0.4, 10, 0.8, 14, 1.2],
             'heatmap-color': [
-
               'interpolate', ['linear'], ['heatmap-density'],
-
               0, 'rgba(0,0,255,0)',
-
               0.2, 'rgba(100,150,255,0.5)',
-
               0.4, 'rgba(50,200,150,0.6)',
-
               0.6, 'rgba(255,220,0,0.7)',
-
               0.8, 'rgba(255,150,0,0.8)',
-
               1, 'rgba(255,50,0,0.9)'
-
             ],
-
-            'heatmap-radius': [
-
-              'interpolate', ['linear'], ['zoom'],
-
-              5, 8, 10, 14, 14, 22
-
-            ],
-
+            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 5, 8, 10, 14, 14, 22],
             'heatmap-opacity': 0.85
-
           }
-
         });
-
-
-
         initScrollama();
-
       });
 
-
-
-      function initScrollama() {
-
-        setStepSpacing();
-
-        var scroller = scrollama();
-
-        /* Mobile-Pattern (Scrollama): Pixel-Offset verhindert Sprünge bei Scroll-Richtungswechsel auf Touch-Geräten */
+      /* Sticky-Overlay-Beispiel: Höhen in px setzen, dann scroller.resize(). README Tips: vh vermeiden. */
+      function handleResize() {
+        var h = window.innerHeight;
         var isNarrow = window.matchMedia('(max-width: 640px)').matches;
-
-        var offset = isNarrow
-
-          ? Math.floor(window.innerHeight * 0.5) + 'px'
-
-          : 0.5;
-
-
-
-        scroller
-
-          .setup({
-
-            step: '.step',
-
-            offset: offset,
-
-            progress: false,
-
-            once: false
-
-          })
-
-          .onStepEnter(function (response) {
-
-            var el = response.element;
-
-            var sceneId = el.getAttribute('data-scene');
-
-            document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('is-active'); });
-
-            el.classList.add('is-active');
-
-            if (sceneId && scenes[sceneId]) {
-
-              map.flyTo({
-
-                center: scenes[sceneId].center,
-
-                zoom: scenes[sceneId].zoom,
-
-                duration: 1800,
-
-                essential: true
-
-              });
-
-            }
-
-          })
-
-          .onStepExit(function (response) {
-
-            response.element.classList.remove('is-active');
-
-          });
-
-        /* Resize: Abstände und Offset anpassen (Mobile ↔ Desktop). Scrollama 3 hat ResizeObserver; .offset() ruft updateObservers() auf. */
-        var resizeTimeout;
-
-        window.addEventListener('resize', function () {
-
-          if (resizeTimeout) clearTimeout(resizeTimeout);
-
-          resizeTimeout = setTimeout(function () {
-
-            setStepSpacing();
-
-            var nowNarrow = window.matchMedia('(max-width: 640px)').matches;
-
-            var newOffset = nowNarrow
-
-              ? Math.floor(window.innerHeight * 0.5) + 'px'
-
-              : 0.5;
-
-            scroller.offset(newOffset);
-
-            scroller.resize();
-
-          }, 150);
-
+        var stepH = isNarrow ? Math.floor(h * 0.6) : Math.floor(h * 0.75);
+        var mapEl = document.getElementById('map');
+        var stepsEl = document.querySelector('.steps');
+        var steps = document.querySelectorAll('.step');
+        if (mapEl) mapEl.style.height = h + 'px';
+        if (stepsEl) stepsEl.style.paddingBottom = Math.floor(h * 0.5) + 'px';
+        steps.forEach(function (step) {
+          step.style.minHeight = stepH + 'px';
         });
-
+        if (scroller) scroller.resize();
       }
 
+      function initScrollama() {
+        /* Mobile Pattern (Beispiel mobile-pattern): Pixel-Offset nutzen, damit es beim Scroll-Richtungswechsel nicht springt. */
+        var midpoint = Math.floor(window.innerHeight * 0.5) + 'px';
+        var isNarrow = window.matchMedia('(max-width: 640px)').matches;
+        var offset = isNarrow ? midpoint : 0.5;
 
+        scroller = scrollama();
 
+        scroller
+          .setup({
+            step: '#scrolly .step',
+            offset: offset,
+            progress: false,
+            once: false
+          })
+          .onStepEnter(function (response) {
+            var el = response.element;
+            var sceneId = el.getAttribute('data-scene');
+            document.querySelectorAll('.step').forEach(function (s) { s.classList.remove('is-active'); });
+            el.classList.add('is-active');
+            if (sceneId && scenes[sceneId]) {
+              map.flyTo({
+                center: scenes[sceneId].center,
+                zoom: scenes[sceneId].zoom,
+                duration: 1800,
+                essential: true
+              });
+            }
+          })
+          .onStepExit(function (response) {
+            response.element.classList.remove('is-active');
+          });
+
+        handleResize();
+
+        /* README: throttle resize, update DOM, then call resize(). */
+        var resizeTimeout;
+        window.addEventListener('resize', function () {
+          if (resizeTimeout) clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(function () {
+            handleResize();
+            var nowNarrow = window.matchMedia('(max-width: 640px)').matches;
+            var newOffset = nowNarrow ? Math.floor(window.innerHeight * 0.5) + 'px' : 0.5;
+            scroller.offset(newOffset);
+          }, 150);
+        });
+      }
+
+      /* iframe-Embed: Scroll vom Parent weiterleiten */
       if (window !== window.top) {
-
         window.addEventListener('message', function (e) {
-
           if (!e.data || e.data.type !== 'scroll' || typeof e.data.deltaY !== 'number') return;
-
           window.scrollBy(0, e.data.deltaY);
-
         });
 
         function sendScrollState() {
-
           var y = window.scrollY;
-
           var h = window.innerHeight;
-
           var docH = document.documentElement.scrollHeight;
-
           window.parent.postMessage({
-
             type: 'scrollState',
-
             atTop: y <= 2,
-
             atBottom: y + h >= docH - 2
-
           }, '*');
-
         }
 
         var scrollTick;
-
         window.addEventListener('scroll', function () {
-
           if (scrollTick) return;
-
           scrollTick = requestAnimationFrame(function () {
-
             sendScrollState();
-
             scrollTick = null;
-
           });
-
         }, { passive: true });
 
         if (document.readyState === 'complete') sendScrollState();
-
         else window.addEventListener('load', sendScrollState);
-
       }
-
     })();
-
   </script>
-
 </body>
-
 </html>
