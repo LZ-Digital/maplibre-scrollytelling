@@ -67,7 +67,8 @@
 
   overlay.setAttribute('aria-hidden', 'true');
 
-  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;';
+  /* z-index nötig, damit Overlay über dem iframe liegt und Wheel/Touch hier ankommen (nicht im iframe) */
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;z-index:1;';
 
   container.appendChild(overlay);
 
@@ -99,11 +100,12 @@
 
     var rect = container.getBoundingClientRect();
 
+    /* Embed „erreicht“, sobald es sichtbar ist (nicht erst wenn Top ≤ topOffset). Stopp, sobald es ganz raus ist. */
     if (rect.bottom <= topOffset) {
 
       embedReached = false;
 
-    } else if (rect.top <= topOffset) {
+    } else if (rect.top < window.innerHeight) {
 
       embedReached = true;
 
@@ -132,15 +134,32 @@
 
 
 
-  /* Desktop: Mausrad – Scroll-Capture wenn Embed im Viewport */
-  window.addEventListener('wheel', function (e) {
-    updateEmbedReached();
-    if (!embedReached) return;
-    if (atBottom && e.deltaY > 0) return;
-    if (atTop && e.deltaY < 0) return;
+  function shouldCaptureWheel(deltaY) {
+    if (atBottom && deltaY > 0) return false;
+    if (atTop && deltaY < 0) return false;
+    return true;
+  }
+
+  function forwardWheel(deltaY) {
+    if (!shouldCaptureWheel(deltaY)) return;
+    if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'scroll', deltaY: deltaY }, iframeOrigin);
+  }
+
+  /* Desktop: Mausrad auf dem Overlay – Cursor über Embed: nur hier scrollen, sonst Seite durchlassen */
+  overlay.addEventListener('wheel', function (e) {
+    if (!shouldCaptureWheel(e.deltaY)) return;
     e.preventDefault();
     e.stopPropagation();
-    iframe.contentWindow.postMessage({ type: 'scroll', deltaY: e.deltaY }, iframeOrigin);
+    forwardWheel(e.deltaY);
+  }, { passive: false });
+
+  /* Desktop: Mausrad außerhalb des Embeds – wenn Embed sichtbar/erreicht, Scroll abfangen und ins iframe leiten */
+  window.addEventListener('wheel', function (e) {
+    updateEmbedReached();
+    if (!embedReached || !shouldCaptureWheel(e.deltaY)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    forwardWheel(e.deltaY);
   }, { passive: false, capture: true });
 
   /* Mobile: Touch – Scroll im Embed weiterleiten, wenn Overlay berührt wird */
