@@ -28,6 +28,7 @@
 
 
 
+    /* Sticky-Overlay-Pattern (Scrollama): Karte bleibt fixiert, Steps laufen darüber. Höhe wird per JS gesetzt (vh vermeiden). */
     #map {
 
       position: sticky;
@@ -36,9 +37,11 @@
 
       width: 100%;
 
-      height: 100vh;
+      height: 100vh; /* Fallback; wird in setStepSpacing() durch px ersetzt */
 
       z-index: 0;
+
+      will-change: transform;
 
     }
 
@@ -54,7 +57,7 @@
 
       margin: 0 auto;
 
-      padding: 0 1rem 60vh 1rem;
+      padding: 0 1rem var(--steps-padding-bottom, 60vh) 1rem;
 
     }
 
@@ -62,7 +65,7 @@
 
     .step {
 
-      margin-bottom: 80vh;
+      margin-bottom: var(--step-spacing, 80vh);
 
       padding: 1.25rem 1.5rem;
 
@@ -92,10 +95,10 @@
 
 
 
-    /* Mobile: weniger Abstand, bessere Lesbarkeit */
+    /* Mobile: weniger Abstand, bessere Lesbarkeit (px-Werte werden per JS gesetzt, um vh-Resize zu vermeiden) */
     @media (max-width: 640px) {
-      .steps { max-width: 100%; padding: 0 0.75rem 50vh 0.75rem; }
-      .step { margin-bottom: 60vh; padding: 1rem 1.25rem; }
+      .steps { max-width: 100%; padding-left: 0.75rem; padding-right: 0.75rem; }
+      .step { padding: 1rem 1.25rem; }
       .step h2 { font-size: 1.1rem; }
       .step p { font-size: 0.9rem; }
     }
@@ -165,6 +168,31 @@
     (function () {
 
       var map;
+
+      /* Scrollama-Tipp: vh vermeiden, da sich die Viewport-Höhe (z. B. durch Browser-UI) ändern und Resize auslösen kann. Abstände in px setzen. */
+      function setStepSpacing() {
+
+        var h = window.innerHeight;
+
+        var isNarrow = window.matchMedia('(max-width: 640px)').matches;
+
+        var spacing = isNarrow ? Math.floor(h * 0.6) : Math.floor(h * 0.8);
+
+        var paddingBottom = isNarrow ? Math.floor(h * 0.5) : Math.floor(h * 0.6);
+
+        var root = document.documentElement;
+
+        root.style.setProperty('--step-spacing', spacing + 'px');
+
+        root.style.setProperty('--steps-padding-bottom', paddingBottom + 'px');
+
+        var mapEl = document.getElementById('map');
+
+        if (mapEl) mapEl.style.height = h + 'px';
+
+      }
+
+      setStepSpacing();
 
       var scenes = {
 
@@ -272,9 +300,11 @@
 
       function initScrollama() {
 
+        setStepSpacing();
+
         var scroller = scrollama();
 
-        /* Mobile-Pattern (Scrollama-Doku): Pixel-Offset verhindert Sprünge bei Scroll-Richtungswechsel */
+        /* Mobile-Pattern (Scrollama): Pixel-Offset verhindert Sprünge bei Scroll-Richtungswechsel auf Touch-Geräten */
         var isNarrow = window.matchMedia('(max-width: 640px)').matches;
 
         var offset = isNarrow
@@ -325,9 +355,15 @@
 
             }
 
+          })
+
+          .onStepExit(function (response) {
+
+            response.element.classList.remove('is-active');
+
           });
 
-        /* Resize: Offset anpassen (Mobile ↔ Desktop). Scrollama-API ist .offset(), nicht .offsetTrigger(). .offset(x) ruft intern updateObservers() auf. */
+        /* Resize: Abstände und Offset anpassen (Mobile ↔ Desktop). Scrollama 3 hat ResizeObserver; .offset() ruft updateObservers() auf. */
         var resizeTimeout;
 
         window.addEventListener('resize', function () {
@@ -335,6 +371,8 @@
           if (resizeTimeout) clearTimeout(resizeTimeout);
 
           resizeTimeout = setTimeout(function () {
+
+            setStepSpacing();
 
             var nowNarrow = window.matchMedia('(max-width: 640px)').matches;
 
@@ -345,6 +383,8 @@
               : 0.5;
 
             scroller.offset(newOffset);
+
+            scroller.resize();
 
           }, 150);
 

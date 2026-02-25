@@ -125,11 +125,18 @@
 
   }, { passive: true });
 
-  window.addEventListener('resize', function () {
+  /* Resize: Debounce wie bei Scrollama (index.html), damit nicht bei jeder Größenänderung sofort neu gerechnet wird. Breakpoint 768 = „Embed-Mobile“ (Iframe-Höhe); index.html nutzt 640 für Step-Offset. */
+  var resizeTimeout;
+  function handleResize() {
     updateEmbedReached();
     var mobile = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
     iframe.style.height = mobile ? '85vh' : '700px';
+  }
+  window.addEventListener('resize', function () {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(handleResize, 150);
   });
+  handleResize();
   updateEmbedReached();
 
 
@@ -145,23 +152,28 @@
     if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'scroll', deltaY: deltaY }, iframeOrigin);
   }
 
-  /* Desktop: Mausrad auf dem Overlay – nur abfangen, wenn Embed „erreicht“ ist, sonst Seite durchscrollen lassen */
-  overlay.addEventListener('wheel', function (e) {
+  /* Desktop: Mausrad – Abfangen nur wenn Embed „erreicht“; rAF reduziert Nachrichtenflut ins iframe (flüssigeres Scrollen). */
+  var wheelRAF = null;
+  var pendingDeltaY = 0;
+  function flushWheel() {
+    wheelRAF = null;
+    if (pendingDeltaY !== 0) {
+      forwardWheel(pendingDeltaY);
+      pendingDeltaY = 0;
+    }
+  }
+  function onWheel(e) {
     updateEmbedReached();
     if (!embedReached || !shouldCaptureWheel(e.deltaY)) return;
     e.preventDefault();
     e.stopPropagation();
-    forwardWheel(e.deltaY);
-  }, { passive: false });
+    pendingDeltaY += e.deltaY;
+    if (wheelRAF === null) wheelRAF = requestAnimationFrame(flushWheel);
+  }
 
-  /* Desktop: Mausrad außerhalb des Embeds – wenn Embed sichtbar/erreicht, Scroll abfangen und ins iframe leiten */
-  window.addEventListener('wheel', function (e) {
-    updateEmbedReached();
-    if (!embedReached || !shouldCaptureWheel(e.deltaY)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    forwardWheel(e.deltaY);
-  }, { passive: false, capture: true });
+  overlay.addEventListener('wheel', onWheel, { passive: false });
+
+  window.addEventListener('wheel', onWheel, { passive: false, capture: true });
 
   /* Mobile: Touch – Scroll im Embed weiterleiten, wenn Overlay berührt wird */
   var touchStartY = 0;
