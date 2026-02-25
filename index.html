@@ -158,28 +158,26 @@
       }
 
       if (window !== window.top) {
-        var scrollStateTick;
+        window.addEventListener('message', function (e) {
+          if (!e.data || e.data.type !== 'scroll' || typeof e.data.deltaY !== 'number') return;
+          window.scrollBy(0, e.data.deltaY);
+        });
         function sendScrollState() {
           var y = window.scrollY;
           var h = window.innerHeight;
           var docH = document.documentElement.scrollHeight;
-          var buffer = 8;
           window.parent.postMessage({
             type: 'scrollState',
-            atTop: y <= buffer,
-            atBottom: y + h >= docH - buffer
+            atTop: y <= 2,
+            atBottom: y + h >= docH - 2
           }, '*');
         }
-        window.addEventListener('message', function (e) {
-          if (!e.data || e.data.type !== 'scroll' || typeof e.data.deltaY !== 'number') return;
-          window.scrollBy(0, e.data.deltaY);
-          requestAnimationFrame(sendScrollState);
-        });
+        var scrollTick;
         window.addEventListener('scroll', function () {
-          if (scrollStateTick) return;
-          scrollStateTick = requestAnimationFrame(function () {
+          if (scrollTick) return;
+          scrollTick = requestAnimationFrame(function () {
             sendScrollState();
-            scrollStateTick = null;
+            scrollTick = null;
           });
         }, { passive: true });
         if (document.readyState === 'complete') sendScrollState();

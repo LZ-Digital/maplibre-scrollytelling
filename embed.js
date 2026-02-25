@@ -32,19 +32,6 @@
   var atTop = true;
   var atBottom = false;
   var embedReached = false;
-  var desiredScrollTop = 0;
-  var allowScrollThrough = false;
-  var scrollLockApplying = false;
-
-  function getScrollTop() {
-    return window.pageYOffset !== undefined
-      ? window.pageYOffset
-      : (document.documentElement || document.body).scrollTop;
-  }
-  function setScrollTop(v) {
-    if (document.documentElement.scrollTop !== undefined) document.documentElement.scrollTop = v;
-    document.body.scrollTop = v;
-  }
 
   window.addEventListener('message', function (e) {
     if (e.origin !== iframeOrigin || !e.data || e.data.type !== 'scrollState') return;
@@ -58,27 +45,10 @@
       embedReached = false;
     } else if (rect.top <= topOffset) {
       embedReached = true;
-      desiredScrollTop = getScrollTop();
     } else {
       embedReached = false;
     }
   }
-
-  window.addEventListener('scroll', function () {
-    if (scrollLockApplying) return;
-    if (embedReached) {
-      if (allowScrollThrough) {
-        allowScrollThrough = false;
-        desiredScrollTop = getScrollTop();
-      } else {
-        scrollLockApplying = true;
-        setScrollTop(desiredScrollTop);
-        requestAnimationFrame(function () {
-          scrollLockApplying = false;
-        });
-      }
-    }
-  }, { passive: true });
 
   var scrollTick;
   window.addEventListener('scroll', function () {
@@ -93,14 +63,8 @@
 
   window.addEventListener('wheel', function (e) {
     if (!embedReached) return;
-    if (atBottom && e.deltaY > 0) {
-      allowScrollThrough = true;
-      return;
-    }
-    if (atTop && e.deltaY < 0) {
-      allowScrollThrough = true;
-      return;
-    }
+    if (atBottom && e.deltaY > 0) return;
+    if (atTop && e.deltaY < 0) return;
     e.preventDefault();
     iframe.contentWindow.postMessage({ type: 'scroll', deltaY: e.deltaY }, iframeOrigin);
   }, { passive: false });
