@@ -1,9 +1,16 @@
 /**
  * Embed-Loader für Scrollytelling-Heatmap (Datawrapper-ähnlich).
  * Liest data-target (Container-Selektor) und data-src (URL der index.html) vom Script-Tag.
- * Scroll-Capture: Sobald das Embed beim Scrollen der Seite erreicht wird, scrollt nur noch
- * im Embed. Am Ende des Embeds scrollt die umgebende Seite wieder.
- * Optional: data-offset-top="100" für Versatz in px (z. B. Sticky-Header-Höhe).
+ *
+ * Scroll-Capture (gemäß Scrollytelling-Pattern):
+ * 1. Die umgebende Seite scrollt, bis der obere Rand des Embeds den oberen Rand des
+ *    Viewports erreicht (bzw. data-offset-top, falls gesetzt).
+ * 2. Ab dann wird das Scrollrad/Touch nur noch ins Embed weitergeleitet – die Seite
+ *    scrollt nicht weiter.
+ * 3. Ist das Embed am Ende (atBottom) und der Nutzer scrollt weiter nach unten, scrollt
+ *    die umgebende Seite wieder. Beim Scrollen nach oben am Anfang (atTop) scrollt die
+ *    Seite ebenfalls weiter.
+ * Optional: data-offset-top="0" (Standard) = Viewport-Oberkante; z. B. "64" bei fixem Header.
  */
 (function () {
   var script = document.currentScript;
@@ -12,7 +19,7 @@
   var targetSelector = script.getAttribute('data-target');
   var src = script.getAttribute('data-src');
   var topOffset = parseInt(script.getAttribute('data-offset-top'), 10);
-  if (isNaN(topOffset)) topOffset = 100;
+  if (isNaN(topOffset)) topOffset = 0;
   if (!targetSelector || !src) return;
 
   var container = document.querySelector(targetSelector);
