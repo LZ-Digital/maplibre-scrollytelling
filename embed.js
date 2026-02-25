@@ -36,15 +36,27 @@
     atBottom = e.data.atBottom;
   });
 
-  var io = new IntersectionObserver(
-    function (entries) {
-      entries.forEach(function (entry) {
-        embedReached = entry.intersectionRatio > 0;
-      });
-    },
-    { threshold: [0, 0.001] }
-  );
-  io.observe(container);
+  function updateEmbedReached() {
+    var rect = container.getBoundingClientRect();
+    if (rect.bottom <= 0) {
+      embedReached = false;
+    } else if (rect.top <= 0) {
+      embedReached = true;
+    } else {
+      embedReached = false;
+    }
+  }
+
+  var scrollTick;
+  window.addEventListener('scroll', function () {
+    if (scrollTick) return;
+    scrollTick = requestAnimationFrame(function () {
+      updateEmbedReached();
+      scrollTick = null;
+    });
+  }, { passive: true });
+  window.addEventListener('resize', updateEmbedReached);
+  updateEmbedReached();
 
   window.addEventListener('wheel', function (e) {
     if (!embedReached) return;
