@@ -90,6 +90,15 @@
 
     .step.is-active { box-shadow: 0 6px 28px rgba(0,0,0,0.18); }
 
+
+
+    /* Mobile: weniger Abstand, bessere Lesbarkeit */
+    @media (max-width: 640px) {
+      .steps { max-width: 100%; padding: 0 0.75rem 50vh 0.75rem; }
+      .step { margin-bottom: 60vh; padding: 1rem 1.25rem; }
+      .step h2 { font-size: 1.1rem; }
+      .step p { font-size: 0.9rem; }
+    }
   </style>
 
 </head>
@@ -102,7 +111,7 @@
 
     <div class="steps">
 
-      <div class="step" data-scene="overview">
+      <div class="step" data-step="overview" data-scene="overview">
 
         <h2>Überblick</h2>
 
@@ -110,7 +119,7 @@
 
       </div>
 
-      <div class="step" data-scene="munich">
+      <div class="step" data-step="munich" data-scene="munich">
 
         <h2>München</h2>
 
@@ -118,7 +127,7 @@
 
       </div>
 
-      <div class="step" data-scene="berlin">
+      <div class="step" data-step="berlin" data-scene="berlin">
 
         <h2>Berlin</h2>
 
@@ -126,7 +135,7 @@
 
       </div>
 
-      <div class="step" data-scene="rhein-ruhr">
+      <div class="step" data-step="rhein-ruhr" data-scene="rhein-ruhr">
 
         <h2>Rhein-Ruhr</h2>
 
@@ -134,7 +143,7 @@
 
       </div>
 
-      <div class="step" data-scene="hamburg">
+      <div class="step" data-step="hamburg" data-scene="hamburg">
 
         <h2>Hamburg</h2>
 
@@ -268,6 +277,15 @@
 
         var scroller = scrollama();
 
+        /* Mobile-Pattern (Scrollama-Doku): Pixel-Offset verhindert Sprünge bei Scroll-Richtungswechsel */
+        var isNarrow = window.matchMedia('(max-width: 640px)').matches;
+
+        var offset = isNarrow
+
+          ? Math.floor(window.innerHeight * 0.5) + 'px'
+
+          : 0.5;
+
 
 
         scroller
@@ -276,7 +294,11 @@
 
             step: '.step',
 
-            offset: 0.5
+            offset: offset,
+
+            progress: false,
+
+            once: false
 
           })
 
@@ -306,11 +328,40 @@
 
             }
 
+          })
+
+          .onStepExit(function (response) {
+
+            response.element.classList.remove('is-active');
+
           });
 
 
 
-        window.addEventListener('resize', scroller.resize);
+        /* Resize: Scrollama 3.x hat ResizeObserver; manueller Aufruf für Offset-Anpassung (Mobile ↔ Desktop) */
+        var resizeTimeout;
+
+        window.addEventListener('resize', function () {
+
+          if (resizeTimeout) clearTimeout(resizeTimeout);
+
+          resizeTimeout = setTimeout(function () {
+
+            var nowNarrow = window.matchMedia('(max-width: 640px)').matches;
+
+            var newOffset = nowNarrow
+
+              ? Math.floor(window.innerHeight * 0.5) + 'px'
+
+              : 0.5;
+
+            scroller.offsetTrigger(newOffset);
+
+            scroller.resize();
+
+          }, 150);
+
+        });
 
       }
 

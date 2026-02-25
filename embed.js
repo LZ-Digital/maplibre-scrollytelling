@@ -56,7 +56,8 @@
 
   iframe.frameBorder = '0';
 
-  iframe.style.cssText = 'width:100%;min-width:100%;border:none;height:700px;display:block;';
+  var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
+  iframe.style.cssText = 'width:100%;min-width:100%;border:none;height:' + (isMobile ? '85vh' : '700px') + ';min-height:400px;display:block;';
 
   container.appendChild(iframe);
 
@@ -122,28 +123,40 @@
 
   }, { passive: true });
 
-  window.addEventListener('resize', updateEmbedReached);
-
+  window.addEventListener('resize', function () {
+    updateEmbedReached();
+    var mobile = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
+    iframe.style.height = mobile ? '85vh' : '700px';
+  });
   updateEmbedReached();
 
 
 
+  /* Desktop: Mausrad – Scroll-Capture wenn Embed im Viewport */
   window.addEventListener('wheel', function (e) {
-
     updateEmbedReached();
-
     if (!embedReached) return;
-
     if (atBottom && e.deltaY > 0) return;
-
     if (atTop && e.deltaY < 0) return;
-
     e.preventDefault();
-
     e.stopPropagation();
-
     iframe.contentWindow.postMessage({ type: 'scroll', deltaY: e.deltaY }, iframeOrigin);
-
   }, { passive: false, capture: true });
 
+  /* Mobile: Touch – Scroll im Embed weiterleiten, wenn Overlay berührt wird */
+  var touchStartY = 0;
+  overlay.addEventListener('touchstart', function (e) {
+    if (e.changedTouches && e.changedTouches[0]) touchStartY = e.changedTouches[0].clientY;
+  }, { passive: true });
+  overlay.addEventListener('touchmove', function (e) {
+    updateEmbedReached();
+    if (!embedReached || !e.changedTouches || !e.changedTouches[0]) return;
+    var touchY = e.changedTouches[0].clientY;
+    var deltaY = touchStartY - touchY;
+    touchStartY = touchY;
+    if (atBottom && deltaY > 0) return;
+    if (atTop && deltaY < 0) return;
+    e.preventDefault();
+    iframe.contentWindow.postMessage({ type: 'scroll', deltaY: deltaY }, iframeOrigin);
+  }, { passive: false, capture: true });
 })();
