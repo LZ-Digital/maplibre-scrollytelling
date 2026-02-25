@@ -49,6 +49,9 @@
   var atBottom = false;
   var embedReached = false;
 
+  /** Toleranz in px: Embed gilt als „erreicht“, sobald sein oberer Rand diese Distanz zum Viewport-Oberrand hat. */
+  var reachTolerancePx = 15;
+
   window.addEventListener('message', function (e) {
     if (e.origin !== iframeOrigin || !e.data || e.data.type !== 'scrollState') return;
     atTop = e.data.atTop;
@@ -57,9 +60,14 @@
 
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
-    if (rect.bottom <= topOffset) embedReached = false;
-    else if (rect.top <= topOffset) embedReached = true;
-    else embedReached = false;
+    var threshold = topOffset + reachTolerancePx;
+    if (rect.bottom <= topOffset) {
+      embedReached = false;
+    } else if (rect.top <= threshold) {
+      embedReached = true;
+    } else {
+      embedReached = false;
+    }
   }
 
   window.addEventListener('scroll', function () { updateEmbedReached(); }, { passive: true });
