@@ -57,22 +57,19 @@
     }
   }
 
-  var scrollTick;
   window.addEventListener('scroll', function () {
-    if (scrollTick) return;
-    scrollTick = requestAnimationFrame(function () {
-      updateEmbedReached();
-      scrollTick = null;
-    });
+    updateEmbedReached();
   }, { passive: true });
   window.addEventListener('resize', updateEmbedReached);
   updateEmbedReached();
 
   window.addEventListener('wheel', function (e) {
+    updateEmbedReached();
     if (!embedReached) return;
     if (atBottom && e.deltaY > 0) return;
     if (atTop && e.deltaY < 0) return;
     e.preventDefault();
+    e.stopPropagation();
     iframe.contentWindow.postMessage({ type: 'scroll', deltaY: e.deltaY }, iframeOrigin);
   }, { passive: false, capture: true });
 })();
