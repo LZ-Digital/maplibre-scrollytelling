@@ -156,6 +156,33 @@
 
         window.addEventListener('resize', scroller.resize);
       }
+
+      if (window !== window.top) {
+        window.addEventListener('message', function (e) {
+          if (!e.data || e.data.type !== 'scroll' || typeof e.data.deltaY !== 'number') return;
+          window.scrollBy(0, e.data.deltaY);
+        });
+        function sendScrollState() {
+          var y = window.scrollY;
+          var h = window.innerHeight;
+          var docH = document.documentElement.scrollHeight;
+          window.parent.postMessage({
+            type: 'scrollState',
+            atTop: y <= 2,
+            atBottom: y + h >= docH - 2
+          }, '*');
+        }
+        var scrollTick;
+        window.addEventListener('scroll', function () {
+          if (scrollTick) return;
+          scrollTick = window.requestAnimationFrame(function () {
+            sendScrollState();
+            scrollTick = null;
+          });
+        }, { passive: true });
+        if (document.readyState === 'complete') sendScrollState();
+        else window.addEventListener('load', sendScrollState);
+      }
     })();
   </script>
 </body>
