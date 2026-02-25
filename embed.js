@@ -1,8 +1,9 @@
 /**
  * Embed-Loader für Scrollytelling-Heatmap (Datawrapper-ähnlich).
  * Liest data-target (Container-Selektor) und data-src (URL der index.html) vom Script-Tag.
- * Scroll-Capture: Beim Scrollen über dem Embed wird zuerst innerhalb des iframes gescrollt,
- * erst am Ende des Inhalts scrollt die einbettende Seite weiter.
+ * Scroll-Capture: Sobald das Embed beim Scrollen der Seite erreicht wird, scrollt weiterhin
+ * nur noch im Embed – unabhängig von der Cursor-Position. Am Ende des Embeds scrollt die
+ * umgebende Seite wieder.
  */
 (function () {
   var script = document.currentScript;
@@ -14,8 +15,6 @@
 
   var container = document.querySelector(targetSelector);
   if (!container) return;
-
-  container.style.position = 'relative';
 
   var iframe = document.createElement('iframe');
   iframe.title = 'Heatmap Scrollytelling – Karte';
@@ -29,6 +28,7 @@
   var iframeOrigin = new URL(src, document.location.href).origin;
   var atTop = true;
   var atBottom = false;
+  var embedReached = false;
 
   window.addEventListener('message', function (e) {
     if (e.origin !== iframeOrigin || !e.data || e.data.type !== 'scrollState') return;
@@ -36,16 +36,20 @@
     atBottom = e.data.atBottom;
   });
 
-  var overlay = document.createElement('div');
-  overlay.setAttribute('aria-hidden', 'true');
-  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;';
-  container.appendChild(overlay);
+  var io = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        embedReached = entry.intersectionRatio > 0;
+      });
+    },
+    { threshold: [0, 0.001] }
+  );
+  io.observe(container);
 
-  overlay.addEventListener('wheel', function (e) {
-    var scrollDown = e.deltaY > 0;
-    var scrollUp = e.deltaY < 0;
-    if (atBottom && scrollDown) return;
-    if (atTop && scrollUp) return;
+  window.addEventListener('wheel', function (e) {
+    if (!embedReached) return;
+    if (atBottom && e.deltaY > 0) return;
+    if (atTop && e.deltaY < 0) return;
     e.preventDefault();
     iframe.contentWindow.postMessage({ type: 'scroll', deltaY: e.deltaY }, iframeOrigin);
   }, { passive: false });
