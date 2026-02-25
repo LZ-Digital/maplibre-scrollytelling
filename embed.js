@@ -1,16 +1,10 @@
 /**
  * Embed-Loader für Scrollytelling-Heatmap (Datawrapper-ähnlich).
  * Liest data-target (Container-Selektor) und data-src (URL der index.html) vom Script-Tag.
- *
- * Scroll-Capture (gemäß Scrollytelling-Pattern):
- * 1. Die umgebende Seite scrollt, bis der obere Rand des Embeds den oberen Rand des
- *    Viewports erreicht (bzw. data-offset-top, falls gesetzt).
- * 2. Ab dann wird das Scrollrad/Touch nur noch ins Embed weitergeleitet – die Seite
- *    scrollt nicht weiter.
- * 3. Ist das Embed am Ende (atBottom) und der Nutzer scrollt weiter nach unten, scrollt
- *    die umgebende Seite wieder. Beim Scrollen nach oben am Anfang (atTop) scrollt die
- *    Seite ebenfalls weiter.
- * Optional: data-offset-top="0" (Standard) = Viewport-Oberkante; z. B. "64" bei fixem Header.
+ * Scroll-Capture: Sobald der obere Rand des Embeds data-offset-top erreicht, scrollt nur
+ * noch im Embed. Am Ende scrollt die Seite wieder.
+ * data-offset-top: Abstand in px vom oberen Viewport-Rand (z. B. "0" oder "64" bei fixem Header).
+ * data-touch-sensitivity: Multiplikator für Touch-Swipe (Standard: 2, höher = empfindlicher).
  */
 (function () {
   var script = document.currentScript;
@@ -20,6 +14,8 @@
   var src = script.getAttribute('data-src');
   var topOffset = parseInt(script.getAttribute('data-offset-top'), 10);
   if (isNaN(topOffset)) topOffset = 0;
+  var touchSensitivity = parseFloat(script.getAttribute('data-touch-sensitivity'), 10);
+  if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
   if (!targetSelector || !src) return;
 
   var container = document.querySelector(targetSelector);
@@ -49,9 +45,6 @@
   var atBottom = false;
   var embedReached = false;
 
-  /** Toleranz in px: Embed gilt als „erreicht“, sobald sein oberer Rand diese Distanz zum Viewport-Oberrand hat. */
-  var reachTolerancePx = 15;
-
   window.addEventListener('message', function (e) {
     if (e.origin !== iframeOrigin || !e.data || e.data.type !== 'scrollState') return;
     atTop = e.data.atTop;
@@ -60,14 +53,9 @@
 
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
-    var threshold = topOffset + reachTolerancePx;
-    if (rect.bottom <= topOffset) {
-      embedReached = false;
-    } else if (rect.top <= threshold) {
-      embedReached = true;
-    } else {
-      embedReached = false;
-    }
+    if (rect.bottom <= topOffset) embedReached = false;
+    else if (rect.top <= topOffset) embedReached = true;
+    else embedReached = false;
   }
 
   window.addEventListener('scroll', function () { updateEmbedReached(); }, { passive: true });
@@ -113,7 +101,7 @@
     updateEmbedReached();
     if (!embedReached || !e.changedTouches || !e.changedTouches[0]) return;
     var touchY = e.changedTouches[0].clientY;
-    var deltaY = touchStartY - touchY;
+    var deltaY = (touchStartY - touchY) * touchSensitivity;
     touchStartY = touchY;
     if (atBottom && deltaY > 0) return;
     if (atTop && deltaY < 0) return;
