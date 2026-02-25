@@ -325,17 +325,9 @@
 
             }
 
-          })
-
-          .onStepExit(function (response) {
-
-            response.element.classList.remove('is-active');
-
           });
 
-
-
-        /* Resize: Scrollama 3.x hat ResizeObserver; manueller Aufruf für Offset-Anpassung (Mobile ↔ Desktop) */
+        /* Resize: Offset anpassen (Mobile ↔ Desktop). Scrollama-API ist .offset(), nicht .offsetTrigger(). .offset(x) ruft intern updateObservers() auf. */
         var resizeTimeout;
 
         window.addEventListener('resize', function () {
@@ -352,9 +344,7 @@
 
               : 0.5;
 
-            scroller.offsetTrigger(newOffset);
-
-            scroller.resize();
+            scroller.offset(newOffset);
 
           }, 150);
 
