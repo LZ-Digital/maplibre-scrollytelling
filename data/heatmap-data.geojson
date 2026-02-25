@@ -1,0 +1,265 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5762, 48.1372] },
+      "properties": { "name": "München Zentrum", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5820, 48.1355] },
+      "properties": { "name": "Marienplatz", "intensity": 10 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5620, 48.1480] },
+      "properties": { "name": "Schwabing", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.6000, 48.1200] },
+      "properties": { "name": "Sendling", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5400, 48.1550] },
+      "properties": { "name": "Olympiapark", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5900, 48.1280] },
+      "properties": { "name": "Gärtnerplatz", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5700, 48.1420] },
+      "properties": { "name": "Maxvorstadt", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.6050, 48.1180] },
+      "properties": { "name": "Isarvorstadt", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5550, 48.1520] },
+      "properties": { "name": "Schwabing West", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.5750, 48.1380] },
+      "properties": { "name": "Altstadt", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.4049, 52.5200] },
+      "properties": { "name": "Berlin Mitte", "intensity": 10 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.3888, 52.5170] },
+      "properties": { "name": "Brandenburger Tor", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.4250, 52.5120] },
+      "properties": { "name": "Alexanderplatz", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.4020, 52.5240] },
+      "properties": { "name": "Friedrichstraße", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.4100, 52.5080] },
+      "properties": { "name": "Kreuzberg", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.3950, 52.5300] },
+      "properties": { "name": "Prenzlauer Berg", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.4380, 52.5180] },
+      "properties": { "name": "Friedrichshain", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.3700, 52.5100] },
+      "properties": { "name": "Charlottenburg", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.4150, 52.5220] },
+      "properties": { "name": "Mitte Nord", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [13.3900, 52.5150] },
+      "properties": { "name": "Tiergarten", "intensity": 4 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9531, 51.2277] },
+      "properties": { "name": "Düsseldorf Zentrum", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9500, 51.2250] },
+      "properties": { "name": "Kö", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9650, 51.2350] },
+      "properties": { "name": "Unterbilk", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [7.0950, 51.2300] },
+      "properties": { "name": "Essen Zentrum", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [7.0980, 51.2280] },
+      "properties": { "name": "Essen Kettwig", "intensity": 4 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9400, 51.2150] },
+      "properties": { "name": "Düsseldorf Süd", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9600, 51.2400] },
+      "properties": { "name": "Düsseldorf Nord", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [7.0850, 51.2450] },
+      "properties": { "name": "Ruhrgebiet Mitte", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.9937, 53.5511] },
+      "properties": { "name": "Hamburg Zentrum", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.9786, 53.5488] },
+      "properties": { "name": "Rathaus", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.9650, 53.5550] },
+      "properties": { "name": "St. Pauli", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [10.0010, 53.5450] },
+      "properties": { "name": "HafenCity", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.9900, 53.5600] },
+      "properties": { "name": "Eimsbüttel", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.9400, 53.5380] },
+      "properties": { "name": "Altona", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.6821, 50.1109] },
+      "properties": { "name": "Frankfurt Zentrum", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.6842, 50.1094] },
+      "properties": { "name": "Hauptwache", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.6750, 50.1150] },
+      "properties": { "name": "Sachsenhausen", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.6920, 50.1050] },
+      "properties": { "name": "Ostend", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.6700, 50.1200] },
+      "properties": { "name": "Westend", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.1829, 48.7758] },
+      "properties": { "name": "Stuttgart Zentrum", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.1780, 48.7780] },
+      "properties": { "name": "Königsstraße", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.1900, 48.7700] },
+      "properties": { "name": "Mitte", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9530, 50.9410] },
+      "properties": { "name": "Köln Zentrum", "intensity": 8 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9580, 50.9413] },
+      "properties": { "name": "Dom Köln", "intensity": 9 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.9500, 50.9350] },
+      "properties": { "name": "Altstadt Köln", "intensity": 7 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [10.4515, 51.1657] },
+      "properties": { "name": "Göttingen", "intensity": 4 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [12.3713, 51.3396] },
+      "properties": { "name": "Leipzig Zentrum", "intensity": 6 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [12.3820, 51.3360] },
+      "properties": { "name": "Leipzig Innenstadt", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [11.0774, 49.4521] },
+      "properties": { "name": "Nürnberg", "intensity": 5 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [10.8978, 49.8942] },
+      "properties": { "name": "Erlangen", "intensity": 3 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.2397, 49.9929] },
+      "properties": { "name": "Mainz", "intensity": 4 }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [8.4697, 49.4874] },
+      "properties": { "name": "Heidelberg", "intensity": 4 }
+    }
+  ]
+}
