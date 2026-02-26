@@ -46,7 +46,10 @@
   var container = document.querySelector(targetSelector);
   if (!container) return;
 
-  container.style.position = 'relative';
+  container.style.position = '-webkit-sticky';
+  container.style.position = 'sticky';
+  container.style.top = topOffset + 'px';
+  container.style.zIndex = '10';
 
   var iframe = document.createElement('iframe');
   iframe.title = 'Heatmap Scrollytelling – Karte';
