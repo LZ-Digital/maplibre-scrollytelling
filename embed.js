@@ -5,8 +5,9 @@
  * noch im Embed. Am Ende scrollt die Seite wieder.
  * data-offset-top: Abstand in px vom oberen Viewport-Rand (z. B. "0" oder "64" bei fixem Header).
  * data-touch-sensitivity: Multiplikator für Touch-Swipe (Standard: 2, höher = empfindlicher).
- * Bei CMS mit innerem Scroll-Container (z. B. overflow auf main/content) wird der tatsächliche
- * Scroll-Container ermittelt, damit „embedReached“ zuverlässig aktualisiert wird (scroll blubbert nicht).
+ * data-wheel-sensitivity: Multiplikator für Mausrad (Standard: 2.5, höher = größere Sprünge bei weniger Bewegung).
+ * „embedReached“ wird per Scroll-Listener an allen Vorfahren des Containers plus Intersection Observer
+ * aktualisiert, damit es auch bei CMS mit beliebigem Scroll-Container (z. B. overflow auf Wrapper) funktioniert.
  */
 (function () {
   var script = document.currentScript;
@@ -18,6 +19,8 @@
   if (isNaN(topOffset)) topOffset = 0;
   var touchSensitivity = parseFloat(script.getAttribute('data-touch-sensitivity'), 10);
   if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
+  var wheelSensitivity = parseFloat(script.getAttribute('data-wheel-sensitivity'), 10);
+  if (isNaN(wheelSensitivity) || wheelSensitivity <= 0) wheelSensitivity = 2.5;
   if (!targetSelector || !src) return;
 
   var container = document.querySelector(targetSelector);
@@ -53,23 +56,6 @@
     atBottom = e.data.atBottom;
   });
 
-  function getScrollParent(el) {
-    var node = el;
-    while (node && node !== document.body) {
-      node = node.parentElement;
-      if (!node) break;
-      var style = window.getComputedStyle(node);
-      var oy = style.overflowY;
-      var o = style.overflow;
-      var scrollable = (oy === 'auto' || oy === 'scroll' || o === 'auto' || o === 'scroll') &&
-        node.scrollHeight > node.clientHeight;
-      if (scrollable) return node;
-    }
-    return document.scrollingElement || document.documentElement;
-  }
-
-  var scrollParent = getScrollParent(container);
-
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
     if (rect.bottom <= topOffset) embedReached = false;
@@ -77,13 +63,39 @@
     else embedReached = false;
   }
 
-  scrollParent.addEventListener('scroll', function () { updateEmbedReached(); }, { passive: true });
-  window.addEventListener('scroll', function () { updateEmbedReached(); }, { passive: true });
+  function onScrollOrResize() {
+    updateEmbedReached();
+  }
+
+  var scrollOpt = { passive: true };
+  var node = container;
+  while (node && node !== document.body) {
+    node = node.parentElement;
+    if (node) node.addEventListener('scroll', onScrollOrResize, scrollOpt);
+  }
+  window.addEventListener('scroll', onScrollOrResize, scrollOpt);
+  if (document.scrollingElement && document.scrollingElement !== document.body) {
+    document.scrollingElement.addEventListener('scroll', onScrollOrResize, scrollOpt);
+  }
   window.addEventListener('resize', function () {
     updateEmbedReached();
     var mobile = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
     iframe.style.height = mobile ? '85vh' : '700px';
   });
+  if (typeof IntersectionObserver !== 'undefined') {
+    var io = new IntersectionObserver(
+      function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].target === container) {
+            updateEmbedReached();
+            break;
+          }
+        }
+      },
+      { root: null, threshold: [0, 0.01, 0.25, 0.5, 0.75, 1] }
+    );
+    io.observe(container);
+  }
   updateEmbedReached();
 
   function shouldCaptureWheel(deltaY) {
@@ -94,7 +106,8 @@
 
   function forwardWheel(deltaY) {
     if (!shouldCaptureWheel(deltaY)) return;
-    if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'scroll', deltaY: deltaY }, iframeOrigin);
+    var scaled = deltaY * wheelSensitivity;
+    if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'scroll', deltaY: scaled }, iframeOrigin);
   }
 
   overlay.addEventListener('wheel', function (e) {
