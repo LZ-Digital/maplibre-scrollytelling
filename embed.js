@@ -65,7 +65,8 @@
   var iframeOrigin = new URL(src, document.location.href).origin;
   var atTop = true;
   var atBottom = false;
-  var embedReached = false;
+  var embedReachedDown = false;
+  var embedReachedUp = false;
 
   window.addEventListener('message', function (e) {
     if (e.origin !== iframeOrigin || !e.data || e.data.type !== 'scrollState') return;
@@ -76,23 +77,20 @@
     });
   });
 
-  var embedReachedPrev = null;
+  var embedReachedDownPrev = null;
+  var embedReachedUpPrev = null;
   var viewportHeight = function () {
     return window.innerHeight || document.documentElement.clientHeight || 0;
   };
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
     var vh = viewportHeight();
-    if (rect.bottom <= topOffset) {
-      embedReached = false;
-    } else if (rect.top >= vh) {
-      embedReached = false;
-    } else {
-      embedReached = true;
-    }
-    if (embedReached !== embedReachedPrev) {
-      embedReachedPrev = embedReached;
-      log('embedReached geändert', embedReached, 'rect.top=' + Math.round(rect.top) + ' rect.bottom=' + Math.round(rect.bottom) + ' topOffset=' + topOffset + ' vh=' + vh);
+    embedReachedDown = rect.top <= topOffset && rect.bottom > topOffset;
+    embedReachedUp = rect.bottom >= vh && rect.top < vh;
+    if (embedReachedDown !== embedReachedDownPrev || embedReachedUp !== embedReachedUpPrev) {
+      embedReachedDownPrev = embedReachedDown;
+      embedReachedUpPrev = embedReachedUp;
+      log('embedReached geändert', 'Down=' + embedReachedDown, 'Up=' + embedReachedUp, 'rect.top=' + Math.round(rect.top), 'rect.bottom=' + Math.round(rect.bottom), 'topOffset=' + topOffset, 'vh=' + vh);
     }
   }
 
@@ -151,7 +149,9 @@
   function shouldCaptureWheel(deltaY) {
     if (atBottom && deltaY > 0) return false;
     if (atTop && deltaY < 0) return false;
-    return true;
+    if (deltaY > 0) return embedReachedDown;
+    if (deltaY < 0) return embedReachedUp;
+    return false;
   }
 
   function forwardWheel(deltaY) {
@@ -162,16 +162,16 @@
 
   function handleWheel(e, source) {
     updateEmbedReached();
-    var capture = shouldCaptureWheel(e.deltaY);
-    var willCapture = embedReached && capture;
+    var willCapture = shouldCaptureWheel(e.deltaY);
     logThrottled('wheel', 250, function () {
+      var reason = !willCapture ? (!embedReachedDown && !embedReachedUp ? 'Embed nicht am Viewport-Rand' : (e.deltaY > 0 && !embedReachedDown ? 'Oberkante Embed noch nicht am Viewport' : (e.deltaY < 0 && !embedReachedUp ? 'Unterkante Embed noch nicht am Viewport' : 'atTop/atBottom'))) : '';
       log(
         'wheel',
         source,
         'deltaY=' + e.deltaY,
-        'embedReached=' + embedReached,
-        'shouldCapture=' + capture,
-        '→ ' + (willCapture ? 'CAPTURE (preventDefault + forward)' : 'durchlassen: ' + (!embedReached ? 'embedReached=false' : !capture ? 'atTop/atBottom' : ''))
+        'embedReachedDown=' + embedReachedDown,
+        'embedReachedUp=' + embedReachedUp,
+        '→ ' + (willCapture ? 'CAPTURE' : 'durchlassen: ' + reason)
       );
     });
     if (!willCapture) return;
@@ -194,12 +194,11 @@
   }, { passive: true });
   overlay.addEventListener('touchmove', function (e) {
     updateEmbedReached();
-    if (!embedReached || !e.changedTouches || !e.changedTouches[0]) return;
+    if (!e.changedTouches || !e.changedTouches[0]) return;
     var touchY = e.changedTouches[0].clientY;
     var deltaY = (touchStartY - touchY) * touchSensitivity;
     touchStartY = touchY;
-    if (atBottom && deltaY > 0) return;
-    if (atTop && deltaY < 0) return;
+    if (!shouldCaptureWheel(deltaY)) return;
     e.preventDefault();
     iframe.contentWindow.postMessage({ type: 'scroll', deltaY: deltaY }, iframeOrigin);
   }, { passive: false, capture: true });
