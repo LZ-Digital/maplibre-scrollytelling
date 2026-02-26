@@ -5,6 +5,8 @@
  * noch im Embed. Am Ende scrollt die Seite wieder.
  * data-offset-top: Abstand in px vom oberen Viewport-Rand (z. B. "0" oder "64" bei fixem Header).
  * data-touch-sensitivity: Multiplikator für Touch-Swipe (Standard: 2, höher = empfindlicher).
+ * Bei CMS mit innerem Scroll-Container (z. B. overflow auf main/content) wird der tatsächliche
+ * Scroll-Container ermittelt, damit „embedReached“ zuverlässig aktualisiert wird (scroll blubbert nicht).
  */
 (function () {
   var script = document.currentScript;
@@ -51,6 +53,23 @@
     atBottom = e.data.atBottom;
   });
 
+  function getScrollParent(el) {
+    var node = el;
+    while (node && node !== document.body) {
+      node = node.parentElement;
+      if (!node) break;
+      var style = window.getComputedStyle(node);
+      var oy = style.overflowY;
+      var o = style.overflow;
+      var scrollable = (oy === 'auto' || oy === 'scroll' || o === 'auto' || o === 'scroll') &&
+        node.scrollHeight > node.clientHeight;
+      if (scrollable) return node;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+
+  var scrollParent = getScrollParent(container);
+
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
     if (rect.bottom <= topOffset) embedReached = false;
@@ -58,6 +77,7 @@
     else embedReached = false;
   }
 
+  scrollParent.addEventListener('scroll', function () { updateEmbedReached(); }, { passive: true });
   window.addEventListener('scroll', function () { updateEmbedReached(); }, { passive: true });
   window.addEventListener('resize', function () {
     updateEmbedReached();
