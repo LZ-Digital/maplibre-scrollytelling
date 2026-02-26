@@ -83,10 +83,13 @@ Inhalt der Seite durch **eine** URL ersetzen (`https://IHR-HOST/pfad/zur/visuali
 <iframe title="Heatmap Scrollytelling" aria-label="Karte Heatmap Deutschland" src="https://IHR-HOST/pfad/zur/visualisierung/" scrolling="yes" frameborder="0" style="width: 100%; min-width: 100% !important; border: none;" height="700"></iframe>
 ```
 
+**Hinweis bei CMS-Einbindung:** Viele CMS setzen den Embed-Code zusätzlich in einen Wrapper (z. B. `<div class="MediaWrapper_xxLarge">…</div>`). Das verändert die Scrollama-Logik im iframe nicht direkt. **Allerdings** hat die reine iframe-Variante kein Scroll-Capture: Das Mausrad scrollt die **umgebende Seite**, nicht den Inhalt im iframe – das Scroll-Verhalten wirkt dann inkonsistent (mal Seite, mal Embed). Für zuverlässiges Anhalten der Seitenscroll beim Embed und Scrollen nur im Scrollytelling **Variante 2 (Script + Container)** verwenden, sofern das CMS Script-Einbindung erlaubt.
+
 ### Variante 2: Script + Container (wie Datawrapper)
 
 Container-Div mit fester Mindesthöhe, Script lädt die Seite in ein iframe und fügt es in den Container ein. `data-target` = Selektor des Containers, `data-src` = URL der Visualisierung (Ordner oder `index.html`). Optional: `data-offset-top="100"` = Versatz in px (z. B. Höhe eines Sticky-Headers), ab dem das Embed als „erreicht“ gilt (Standard: 100).  
-**Scroll-Capture:** Beim Scrollen der Seite wird zuerst die Seite gescrollt, bis das Embed den oberen Rand (minus Versatz) erreicht; dann scrollt nur noch im Embed, bis dessen Ende – danach scrollt die Seite wieder.
+**Scroll-Capture:** Beim Scrollen der Seite wird zuerst die Seite gescrollt, bis das Embed den oberen Rand (minus Versatz) erreicht; dann scrollt nur noch im Embed, bis dessen Ende – danach scrollt die Seite wieder.  
+*embed.js* ermittelt automatisch den tatsächlichen Scroll-Container der Seite (auch bei CMS mit innerem Scroll-Bereich, z. B. `overflow` auf Artikel-Container), damit das Anhalten am Embed zuverlässig funktioniert.
 
 ```html
 <div style="min-height: 700px" id="maplibre-scrollytelling-embed"></div>
