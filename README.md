@@ -87,7 +87,7 @@ Inhalt der Seite durch **eine** URL ersetzen (`https://IHR-HOST/pfad/zur/visuali
 
 ### Variante 2: Script + Container (wie Datawrapper)
 
-Container-Div mit fester Mindesthöhe, Script lädt die Seite in ein iframe und fügt es in den Container ein. `data-target` = Selektor des Containers, `data-src` = URL der Visualisierung (Ordner oder `index.html`). Optional: `data-offset-top="100"` = Versatz in px (z. B. Höhe eines Sticky-Headers), ab dem das Embed als „erreicht“ gilt (Standard: 100).  
+Container-Div mit fester Mindesthöhe, Script lädt die Seite in ein iframe und fügt es in den Container ein. `data-target` = Selektor des Containers, `data-src` = URL der Visualisierung (Ordner oder `index.html`). Optional: `data-offset-top="100"` = Versatz in px (z. B. Höhe eines Sticky-Headers), ab dem das Embed als „erreicht“ gilt (Standard: 0). `data-wheel-sensitivity="2.5"` = Multiplikator für Mausrad (höher = größere Scroll-Sprünge, Standard: 2.5). `data-touch-sensitivity="2"` = Multiplikator für Touch-Swipe (Standard: 2).  
 **Scroll-Capture:** Beim Scrollen der Seite wird zuerst die Seite gescrollt, bis das Embed den oberen Rand (minus Versatz) erreicht; dann scrollt nur noch im Embed, bis dessen Ende – danach scrollt die Seite wieder.  
 *embed.js* ermittelt automatisch den tatsächlichen Scroll-Container der Seite (auch bei CMS mit innerem Scroll-Bereich, z. B. `overflow` auf Artikel-Container), damit das Anhalten am Embed zuverlässig funktioniert.
 
