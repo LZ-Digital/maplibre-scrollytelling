@@ -7,6 +7,7 @@
  * data-touch-sensitivity: Multiplikator für Touch-Swipe (Standard: 2, höher = empfindlicher).
  * data-wheel-sensitivity: Multiplikator für Mausrad (Standard: 2.5, höher = größere Sprünge bei weniger Bewegung).
  * data-debug: Bei "true" oder "1" werden Debug-Logs in der Konsole ausgegeben (Scroll-/Wheel-/embedReached-Zustand).
+ * data-capture-tolerance: px-Toleranz (Standard 80): Ab dieser Distanz zum Viewport-Rand wird bereits eingefangen (verhindert Überscrollen).
  * „embedReached“ wird per Scroll-Listener an allen Vorfahren des Containers plus Intersection Observer
  * aktualisiert, damit es auch bei CMS mit beliebigem Scroll-Container (z. B. overflow auf Wrapper) funktioniert.
  */
@@ -22,6 +23,8 @@
   if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
   var wheelSensitivity = parseFloat(script.getAttribute('data-wheel-sensitivity'), 10);
   if (isNaN(wheelSensitivity) || wheelSensitivity <= 0) wheelSensitivity = 2.5;
+  var captureTolerance = parseInt(script.getAttribute('data-capture-tolerance'), 10);
+  if (isNaN(captureTolerance) || captureTolerance < 0) captureTolerance = 80;
   var debug = /^(1|true|yes)$/i.test(script.getAttribute('data-debug') || '');
   if (!targetSelector || !src) return;
 
@@ -85,12 +88,12 @@
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
     var vh = viewportHeight();
-    embedReachedDown = rect.top <= topOffset && rect.bottom > topOffset;
-    embedReachedUp = rect.bottom >= vh && rect.top < vh;
+    embedReachedDown = rect.top <= topOffset + captureTolerance && rect.bottom > topOffset;
+    embedReachedUp = rect.bottom >= vh - captureTolerance && rect.top < vh;
     if (embedReachedDown !== embedReachedDownPrev || embedReachedUp !== embedReachedUpPrev) {
       embedReachedDownPrev = embedReachedDown;
       embedReachedUpPrev = embedReachedUp;
-      log('embedReached geändert', 'Down=' + embedReachedDown, 'Up=' + embedReachedUp, 'rect.top=' + Math.round(rect.top), 'rect.bottom=' + Math.round(rect.bottom), 'topOffset=' + topOffset, 'vh=' + vh);
+      log('embedReached geändert', 'Down=' + embedReachedDown, 'Up=' + embedReachedUp, 'rect.top=' + Math.round(rect.top), 'rect.bottom=' + Math.round(rect.bottom), 'tolerance=' + captureTolerance, 'vh=' + vh);
     }
   }
 
