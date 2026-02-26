@@ -6,6 +6,7 @@
  * data-offset-top: Abstand in px vom oberen Viewport-Rand (z. B. "0" oder "64" bei fixem Header).
  * data-touch-sensitivity: Multiplikator für Touch-Swipe (Standard: 2, höher = empfindlicher).
  * data-wheel-sensitivity: Multiplikator für Mausrad (Standard: 2.5, höher = größere Sprünge bei weniger Bewegung).
+ * data-debug: Bei "true" oder "1" werden Debug-Logs in der Konsole ausgegeben (Scroll-/Wheel-/embedReached-Zustand).
  * „embedReached“ wird per Scroll-Listener an allen Vorfahren des Containers plus Intersection Observer
  * aktualisiert, damit es auch bei CMS mit beliebigem Scroll-Container (z. B. overflow auf Wrapper) funktioniert.
  */
@@ -21,7 +22,23 @@
   if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
   var wheelSensitivity = parseFloat(script.getAttribute('data-wheel-sensitivity'), 10);
   if (isNaN(wheelSensitivity) || wheelSensitivity <= 0) wheelSensitivity = 2.5;
+  var debug = /^(1|true|yes)$/i.test(script.getAttribute('data-debug') || '');
   if (!targetSelector || !src) return;
+
+  function log() {
+    if (!debug || !console || !console.log) return;
+    var a = [];
+    for (var i = 0; i < arguments.length; i++) a.push(arguments[i]);
+    console.log.apply(console, ['[ScrollyEmbed]'].concat(a));
+  }
+  function logThrottled(key, intervalMs, fn) {
+    if (!debug) return fn();
+    var last = logThrottled._last || (logThrottled._last = {});
+    var now = Date.now();
+    if (last[key] && now - last[key] < intervalMs) return;
+    last[key] = now;
+    return fn();
+  }
 
   var container = document.querySelector(targetSelector);
   if (!container) return;
@@ -54,29 +71,54 @@
     if (e.origin !== iframeOrigin || !e.data || e.data.type !== 'scrollState') return;
     atTop = e.data.atTop;
     atBottom = e.data.atBottom;
+    logThrottled('scrollState', 800, function () {
+      log('scrollState vom Iframe', 'atTop=' + atTop, 'atBottom=' + atBottom);
+    });
   });
 
+  var embedReachedPrev = null;
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
     if (rect.bottom <= topOffset) embedReached = false;
     else if (rect.top <= topOffset) embedReached = true;
     else embedReached = false;
+    if (embedReached !== embedReachedPrev) {
+      embedReachedPrev = embedReached;
+      log('embedReached geändert', embedReached, 'rect.top=' + Math.round(rect.top) + ' topOffset=' + topOffset);
+    }
   }
 
-  function onScrollOrResize() {
+  function onScrollOrResize(ev) {
+    logThrottled('scroll', 600, function () {
+      var from = ev && ev.target ? (ev.target.tagName + (ev.target.id ? '#' + ev.target.id : '')) : '?';
+      log('scroll ausgelöst von', from, '→ embedReached wird aktualisiert');
+    });
     updateEmbedReached();
   }
 
   var scrollOpt = { passive: true };
+  var scrollParents = [];
   var node = container;
   while (node && node !== document.body) {
     node = node.parentElement;
-    if (node) node.addEventListener('scroll', onScrollOrResize, scrollOpt);
+    if (node) {
+      node.addEventListener('scroll', onScrollOrResize, scrollOpt);
+      var desc = node.tagName + (node.id ? '#' + node.id : '');
+      try {
+        if (typeof node.className === 'string' && node.className) desc += ' .' + node.className.trim().split(/\s+/)[0];
+      } catch (err) {}
+      scrollParents.push(desc);
+    }
   }
   window.addEventListener('scroll', onScrollOrResize, scrollOpt);
   if (document.scrollingElement && document.scrollingElement !== document.body) {
     document.scrollingElement.addEventListener('scroll', onScrollOrResize, scrollOpt);
+    scrollParents.push('document.scrollingElement');
   }
+  scrollParents.push('window');
+  log('Scroll-Listener an', scrollParents.length, 'Stellen:', scrollParents.join(', '));
+  var rect0 = container.getBoundingClientRect();
+  log('Init: container rect.top=' + Math.round(rect0.top), 'topOffset=' + topOffset);
   window.addEventListener('resize', function () {
     updateEmbedReached();
     var mobile = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
@@ -110,20 +152,32 @@
     if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'scroll', deltaY: scaled }, iframeOrigin);
   }
 
-  overlay.addEventListener('wheel', function (e) {
+  function handleWheel(e, source) {
     updateEmbedReached();
-    if (!embedReached || !shouldCaptureWheel(e.deltaY)) return;
+    var capture = shouldCaptureWheel(e.deltaY);
+    var willCapture = embedReached && capture;
+    logThrottled('wheel', 250, function () {
+      log(
+        'wheel',
+        source,
+        'deltaY=' + e.deltaY,
+        'embedReached=' + embedReached,
+        'shouldCapture=' + capture,
+        '→ ' + (willCapture ? 'CAPTURE (preventDefault + forward)' : 'durchlassen: ' + (!embedReached ? 'embedReached=false' : !capture ? 'atTop/atBottom' : ''))
+      );
+    });
+    if (!willCapture) return;
     e.preventDefault();
     e.stopPropagation();
     forwardWheel(e.deltaY);
+  }
+
+  overlay.addEventListener('wheel', function (e) {
+    handleWheel(e, 'overlay');
   }, { passive: false });
 
   window.addEventListener('wheel', function (e) {
-    updateEmbedReached();
-    if (!embedReached || !shouldCaptureWheel(e.deltaY)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    forwardWheel(e.deltaY);
+    handleWheel(e, 'window(capture)');
   }, { passive: false, capture: true });
 
   var touchStartY = 0;
