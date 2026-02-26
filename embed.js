@@ -77,14 +77,22 @@
   });
 
   var embedReachedPrev = null;
+  var viewportHeight = function () {
+    return window.innerHeight || document.documentElement.clientHeight || 0;
+  };
   function updateEmbedReached() {
     var rect = container.getBoundingClientRect();
-    if (rect.bottom <= topOffset) embedReached = false;
-    else if (rect.top <= topOffset) embedReached = true;
-    else embedReached = false;
+    var vh = viewportHeight();
+    if (rect.bottom <= topOffset) {
+      embedReached = false;
+    } else if (rect.top >= vh) {
+      embedReached = false;
+    } else {
+      embedReached = true;
+    }
     if (embedReached !== embedReachedPrev) {
       embedReachedPrev = embedReached;
-      log('embedReached geändert', embedReached, 'rect.top=' + Math.round(rect.top) + ' topOffset=' + topOffset);
+      log('embedReached geändert', embedReached, 'rect.top=' + Math.round(rect.top) + ' rect.bottom=' + Math.round(rect.bottom) + ' topOffset=' + topOffset + ' vh=' + vh);
     }
   }
 
