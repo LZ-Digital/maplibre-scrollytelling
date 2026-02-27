@@ -125,18 +125,6 @@
     iframe.style.pointerEvents = 'auto';
   }
 
-  if (positionMode === 'fixed' && scrollySection) {
-    container.style.visibility = 'hidden';
-    var ioOpt = { threshold: 0 };
-    if (scrollContainer !== document.scrollingElement && scrollContainer !== document.documentElement) {
-      ioOpt.root = scrollContainer;
-    }
-    var io = new IntersectionObserver(function (entries) {
-      container.style.visibility = entries[0].isIntersecting ? 'visible' : 'hidden';
-    }, ioOpt);
-    io.observe(scrollySection);
-  }
-
   window.addEventListener('resize', function () {
     iframe.style.height = '100vh';
   });
