@@ -25,11 +25,21 @@
   min-height: 400px;
 }
 
+/* Steps-Wrapper: immer position relative, z-index 1 */
 .maplibre-scrollytelling .steps-wrapper {
   position: relative;
   z-index: 1;
-  margin-top: -100vh;
   pointer-events: none;
+}
+
+/* Sticky-Modus: Steps mit negativem Margin über Karte gezogen */
+.maplibre-scrollytelling:not(.maplibre-scrollytelling-fixed) .steps-wrapper {
+  margin-top: -100vh;
+}
+
+/* Fixed-Modus (Default für CMS): Steps in normalem Flow, kein negativer Margin */
+.maplibre-scrollytelling-fixed .steps-wrapper {
+  margin-top: 0;
 }
 
 .maplibre-scrollytelling .steps-wrapper .step {

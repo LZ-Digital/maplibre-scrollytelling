@@ -46,6 +46,7 @@ Als **Embed** oder **Custom HTML** einfügen:
   data-target="#map-embed"
   data-src="https://lz-digital.github.io/maplibre-scrollytelling/map-only-embed/map-only.html"
   data-step-selector=".step[data-lng]"
+  data-position="fixed"
 ></script>
 <noscript>
   <p>Für die Karte wird JavaScript benötigt. <a href="https://lz-digital.github.io/maplibre-scrollytelling/map-only-embed/map-only.html">Karte direkt öffnen</a>.</p>
@@ -58,10 +59,11 @@ Als **Embed** oder **Custom HTML** einfügen:
 
 | Attribut | Beschreibung |
 |----------|--------------|
-| `data-scroll-container` | Falls das CMS einen eigenen Scroll-Container hat (z. B. `#article-body`), hier den Selektor angeben |
+| `data-position` | **"fixed"** (Standard für CMS) – Karte bleibt im Viewport, Steps scrollen darüber. **"sticky"** – klassisches Sticky-Verhalten |
+| `data-scroll-container` | Falls das CMS einen eigenen Scroll-Container hat (z. B. `#article-body`), hier den Selektor angeben. Wird sonst automatisch erkannt. |
 | `data-scrolly-section` | Falls die Scrolly-Section einen anderen Selektor hat |
 | `data-offset` | Scrollama-Offset 0–1 (Standard: 0.5) |
-| `data-debug="true"` | Debug-Logs in der Konsole |
+| `data-debug="true"` | Debug-Logs in der Konsole (zeigt u. a. den erkannten Scroll-Container) |
 
 **Beispiel mit eigenem Scroll-Container:**
 ```html
