@@ -27,20 +27,24 @@ Dieser Ordner enthält eine alternative Embed-Variante: Die **Karte** wird als i
 
 ### 2. HTML-Struktur
 
+Die Steps müssen **über** der Karte liegen (höherer z-index) und per negativem `margin-top` über die Karte gezogen werden:
+
 ```html
-<!-- Map-Container (sticky) -->
+<!-- Map-Container (sticky, z-index: 0) -->
 <div id="map-embed"></div>
 
-<!-- Steps mit data-lng, data-lat, data-zoom -->
-<div class="step" data-lng="10.45" data-lat="51.17" data-zoom="5">
-  <h2>Standorte in Deutschland</h2>
-  <p>Scrollen Sie, um in die Ballungsräume zu zoomen.</p>
+<!-- Steps-Wrapper: z-index: 1, margin-top: -100vh (Map ist 100vh) -->
+<div class="steps-wrapper" style="position:relative;z-index:1;margin-top:-100vh;pointer-events:none;">
+  <div class="step" style="pointer-events:auto;" data-lng="10.45" data-lat="51.17" data-zoom="5">
+    <h2>Standorte in Deutschland</h2>
+    <p>Scrollen Sie, um in die Ballungsräume zu zoomen.</p>
+  </div>
+  <div class="step" style="pointer-events:auto;" data-lng="11.576" data-lat="48.137" data-zoom="12">
+    <h2>München</h2>
+    <p>Starker Fokus auf Zentrum und Marienplatz.</p>
+  </div>
+  <!-- weitere Steps -->
 </div>
-<div class="step" data-lng="11.576" data-lat="48.137" data-zoom="12">
-  <h2>München</h2>
-  <p>Starker Fokus auf Zentrum und Marienplatz.</p>
-</div>
-<!-- weitere Steps -->
 ```
 
 ### 3. Embed-Script

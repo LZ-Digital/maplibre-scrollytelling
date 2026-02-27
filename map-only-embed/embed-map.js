@@ -67,22 +67,19 @@
   container.style.top = '0';
   container.style.left = '0';
   container.style.width = '100%';
-  container.style.zIndex = '10';
+  container.style.zIndex = '0';
 
   var iframe = document.createElement('iframe');
   iframe.title = 'Heatmap Scrollytelling – Karte';
   iframe.setAttribute('aria-label', 'Interaktive Heatmap-Karte Deutschland');
   iframe.src = src;
   iframe.frameBorder = '0';
-  var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
-  iframe.style.cssText = 'width:100%;min-width:100%;border:none;height:' + (isMobile ? '85vh' : '70vh') + ';min-height:400px;display:block;';
+  iframe.style.cssText = 'width:100%;min-width:100%;border:none;height:100vh;min-height:400px;display:block;';
 
   container.appendChild(iframe);
 
   window.addEventListener('resize', function () {
-    var mobile = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.matchMedia('(max-width: 768px)').matches);
-    iframe.style.height = mobile ? '85vh' : '70vh';
+    iframe.style.height = '100vh';
   });
 
   function sendFlyTo(lng, lat, zoom, duration) {
