@@ -15,6 +15,11 @@ Demonstrations-Prototyp für eine scrollgesteuerte Kartenvisualisierung: Heatmap
 maplibre-scrollytelling/
 ├── index.html              # Demo-Seite (Karte + Scroll-Steps)
 ├── embed.js                # Loader für Script-Embed (optional)
+├── map-only-embed/         # Alternative: Map-Only Embed (Steps auf Host-Seite)
+│   ├── map-only.html       # Nur Karte, empfängt flyTo per postMessage
+│   ├── embed-map.js        # Loader für Host-Seite
+│   ├── demo.html           # Beispiel-Host-Seite
+│   └── README.md
 ├── data/
 │   └── heatmap-data.geojson # Dummy-GeoJSON mit Punkten für die Heatmap
 ├── .nojekyll               # Damit GitHub Pages kein Jekyll verwendet

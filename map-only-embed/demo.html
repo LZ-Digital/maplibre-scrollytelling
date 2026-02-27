@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Demo: Map-Only Embed – Scrollytelling mit Host-Steps</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .article {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .article h1 {
+      font-size: 1.75rem;
+      margin: 0 0 1rem;
+    }
+
+    .article .intro {
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      color: #555;
+    }
+
+    #map-embed {
+      margin: 0 -1.5rem 0;
+      min-height: 400px;
+    }
+
+    .step {
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .step-content {
+      background: rgba(255, 255, 255, 0.96);
+      padding: 1.25rem 1.5rem;
+      border-radius: 8px;
+      max-width: 420px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .step-content h2 { margin: 0 0 0.25em; font-size: 1.25rem; }
+    .step-content p { margin: 0; font-size: 0.9375rem; line-height: 1.45; }
+
+    .outro {
+      padding: 2rem 1.5rem;
+      margin-top: 2rem;
+      border-top: 1px solid #eee;
+      color: #666;
+      font-size: 0.9375rem;
+    }
+
+    @media (max-width: 768px) {
+      .step { min-height: 85vh; padding: 1.5rem 1rem; }
+      .step-content { padding: 1rem 1.25rem; }
+      .step-content h2 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <article class="article">
+    <h1>Standorte in Deutschland</h1>
+    <p class="intro">
+      Diese Demo zeigt den Map-Only-Embed: Die Karte wird eingebettet, die Steps liegen
+      auf dieser Seite. Beim Scrollen zoomen Sie in die Ballungsräume.
+    </p>
+
+    <div id="map-embed"></div>
+
+    <div class="step" data-lng="10.45" data-lat="51.17" data-zoom="5">
+      <div class="step-content">
+        <h2>Standorte in Deutschland</h2>
+        <p>Scrollen Sie, um in die Ballungsräume zu zoomen. Die Heatmap zeigt die Dichte der Standorte.</p>
+      </div>
+    </div>
+    <div class="step" data-lng="11.576" data-lat="48.137" data-zoom="12">
+      <div class="step-content">
+        <h2>München</h2>
+        <p>Starker Fokus auf Zentrum, Marienplatz und Maxvorstadt.</p>
+      </div>
+    </div>
+    <div class="step" data-lng="13.405" data-lat="52.52" data-zoom="12">
+      <div class="step-content">
+        <h2>Berlin</h2>
+        <p>Mitte, Alexanderplatz und Kreuzberg mit hoher Intensität.</p>
+      </div>
+    </div>
+    <div class="step" data-lng="9.994" data-lat="53.551" data-zoom="12">
+      <div class="step-content">
+        <h2>Hamburg</h2>
+        <p>Rathaus, St. Pauli und HafenCity im Fokus.</p>
+      </div>
+    </div>
+    <div class="step" data-lng="8.682" data-lat="50.111" data-zoom="12">
+      <div class="step-content">
+        <h2>Frankfurt</h2>
+        <p>Zentrum und Hauptwache mit hoher Dichte.</p>
+      </div>
+    </div>
+    <div class="step" data-lng="6.953" data-lat="50.941" data-zoom="12">
+      <div class="step-content">
+        <h2>Köln</h2>
+        <p>Dom und Altstadt als Schwerpunkte.</p>
+      </div>
+    </div>
+    <div class="step" data-lng="10.45" data-lat="51.17" data-zoom="5">
+      <div class="step-content">
+        <h2>Überblick</h2>
+        <p>Alle Standorte im Überblick. Ende der Demo.</p>
+      </div>
+    </div>
+
+    <p class="outro">
+      Ende des Scrollytellings. Die Steps und Texte stammen von dieser Host-Seite,
+      die Karte wird per postMessage gesteuert.
+    </p>
+  </article>
+
+  <script src="https://unpkg.com/scrollama@3.2.0/build/scrollama.min.js"></script>
+  <script
+    type="text/javascript"
+    defer
+    src="embed-map.js"
+    charset="utf-8"
+    data-target="#map-embed"
+    data-src="map-only.html"
+    data-step-selector=".step[data-lng]"
+  ></script>
+  <noscript>
+    <p>Für die Karte wird JavaScript benötigt. <a href="map-only.html">Karte direkt öffnen</a>.</p>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Heatmap-Karte (Map-Only Embed)</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #e8e8e8;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script>
+    (function () {
+      var mapEl = document.getElementById('map');
+
+      var map = new maplibregl.Map({
+        container: mapEl,
+        style: 'https://tiles.openfreemap.org/styles/positron',
+        center: [10.45, 51.17],
+        zoom: 5,
+        attributionControl: true
+      });
+
+      map.scrollZoom.disable();
+
+      map.on('load', function () {
+        fetch('../data/heatmap-data.geojson')
+          .then(function (r) { return r.json(); })
+          .then(function (geojson) {
+            map.addSource('heatmap-points', { type: 'geojson', data: geojson });
+            map.addLayer({
+              id: 'heatmap',
+              type: 'heatmap',
+              source: 'heatmap-points',
+              paint: {
+                'heatmap-weight': ['/', ['get', 'intensity'], 10],
+                'heatmap-intensity': 1,
+                'heatmap-radius': 20,
+                'heatmap-opacity': 0.7
+              }
+            });
+          })
+          .catch(function () {
+            console.warn('Heatmap-Daten konnten nicht geladen werden.');
+          });
+      });
+
+      map.on('resize', function () { map.resize(); });
+      window.addEventListener('resize', function () { map.resize(); });
+
+      window.addEventListener('message', function (e) {
+        if (!e.data || e.data.type !== 'flyTo') return;
+        var lng = parseFloat(e.data.lng, 10);
+        var lat = parseFloat(e.data.lat, 10);
+        var zoom = parseFloat(e.data.zoom, 10);
+        var duration = typeof e.data.duration === 'number' ? e.data.duration : 1200;
+        if (!isNaN(lng) && !isNaN(lat) && !isNaN(zoom)) {
+          map.flyTo({ center: [lng, lat], zoom: zoom, duration: duration, essential: true });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
