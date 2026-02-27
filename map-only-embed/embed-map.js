@@ -8,6 +8,7 @@
  * - data-target: CSS-Selektor des Map-Containers (z.B. "#map-embed")
  * - data-src: URL von map-only.html (z.B. "https://.../map-only-embed/map-only.html")
  * - data-step-selector: Selektor für Step-Elemente (Default: "[data-lng][data-lat][data-zoom]")
+ * - data-scrolly-section: Selektor der Scrolly-Section (Default: ".scrolly-section" oder Parent von data-target)
  * - data-scroll-container: Selektor des Scroll-Containers (Default: null = document.scrollingElement)
  * - data-offset: Scrollama offset 0–1 (Default: 0.5)
  * - data-debug: "true" für Debug-Logs
@@ -21,6 +22,7 @@
   var targetSelector = script.getAttribute('data-target');
   var src = script.getAttribute('data-src');
   var stepSelector = script.getAttribute('data-step-selector') || '[data-lng][data-lat][data-zoom]';
+  var scrollySectionSelector = script.getAttribute('data-scrolly-section');
   var scrollContainerSelector = script.getAttribute('data-scroll-container');
   var offset = parseFloat(script.getAttribute('data-offset'), 10);
   if (isNaN(offset) || offset < 0 || offset > 1) offset = 0.5;
@@ -45,6 +47,14 @@
   if (!steps.length) {
     log('Keine Steps gefunden mit Selektor:', stepSelector);
     return;
+  }
+
+  var scrollySection = scrollySectionSelector
+    ? document.querySelector(scrollySectionSelector)
+    : container.closest('.scrolly-section') || container.parentElement;
+  if (scrollySection) {
+    scrollySection.classList.add('maplibre-scrollytelling');
+    scrollySection.style.height = steps.length * 100 + 'vh';
   }
 
   if (typeof scrollama === 'undefined') {

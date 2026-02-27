@@ -1,0 +1,77 @@
+/**
+ * Map-Only Embed – CMS-Styles (scoped)
+ * Alle Styles sind unter .maplibre-scrollytelling gekapselt, um CMS-Konflikte zu vermeiden.
+ */
+.maplibre-scrollytelling {
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.maplibre-scrollytelling *,
+.maplibre-scrollytelling *::before,
+.maplibre-scrollytelling *::after {
+  box-sizing: border-box;
+}
+
+.maplibre-scrollytelling .scrolly-section {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  /* height wird per JS gesetzt (data-steps-count × 100vh) */
+}
+
+.maplibre-scrollytelling #map-embed {
+  width: 100%;
+  height: 100vh;
+  min-height: 400px;
+}
+
+.maplibre-scrollytelling .steps-wrapper {
+  position: relative;
+  z-index: 1;
+  margin-top: -100vh;
+  pointer-events: none;
+}
+
+.maplibre-scrollytelling .steps-wrapper .step {
+  pointer-events: auto;
+}
+
+.maplibre-scrollytelling .step {
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.maplibre-scrollytelling .step-content {
+  background: rgba(255, 255, 255, 0.96);
+  padding: 1.25rem 1.5rem;
+  border-radius: 8px;
+  max-width: 420px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.maplibre-scrollytelling .step-content h2 {
+  margin: 0 0 0.25em;
+  font-size: 1.25rem;
+}
+
+.maplibre-scrollytelling .step-content p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+  .maplibre-scrollytelling .step {
+    min-height: 100vh;
+    padding: 1.5rem 1rem;
+  }
+  .maplibre-scrollytelling .step-content {
+    padding: 1rem 1.25rem;
+  }
+  .maplibre-scrollytelling .step-content h2 {
+    font-size: 1.1rem;
+  }
+}

@@ -14,7 +14,10 @@ Dieser Ordner enthält eine alternative Embed-Variante: Die **Karte** wird als i
 |-------|--------------|
 | `map-only.html` | Nur die Karte, empfängt `flyTo` per postMessage |
 | `embed-map.js` | Loader für die Host-Seite: iframe + Scrollama-Integration |
+| `embed-cms.css` | CMS-Styles (scoped, keine Konflikte) |
+| `embed-cms.html` | Fertiger Embed-Code zum Kopieren |
 | `demo.html` | Beispiel-Host-Seite mit Intro, Steps und Outro |
+| `CMS-ANLEITUNG.md` | Detaillierte Anleitung für CMS-Einbindung |
 
 ## Einbindung im CMS
 
