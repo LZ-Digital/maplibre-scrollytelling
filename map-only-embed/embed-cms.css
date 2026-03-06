@@ -37,9 +37,14 @@
   margin-top: -100vh;
 }
 
-/* Fixed-Modus (Default für CMS): Steps in normalem Flow, kein negativer Margin */
+/* Fixed-Modus: Steps in normalem Flow, kein negativer Margin */
 .maplibre-scrollytelling-fixed .steps-wrapper {
   margin-top: 0;
+}
+
+/* Capture-Modus: Steps mit negativem Margin über Karte (scrollt innerhalb des Embeds) */
+.maplibre-scrollytelling-capture .steps-wrapper {
+  margin-top: -100vh;
 }
 
 .maplibre-scrollytelling .steps-wrapper .step {

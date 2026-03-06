@@ -1,20 +1,15 @@
 /**
  * Map-Only Embed Loader (Option 1: API-gesteuert)
  *
- * Bindet die Heatmap-Karte als iframe ein. Die Steps liegen auf der Host-Seite.
- * Bei Scroll-Trigger (Scrollama) wird flyTo an das iframe gesendet.
+ * Zwei Modi:
+ * - capture (Default): Seite scrollen → am Embed einrasten → im Embed scrollen → Seite weiterscrollen
+ * - overlay: Steps overlay die Karte beim Seitenscroll (kein innerer Scroll)
  *
  * Script-Attribute:
- * - data-target: CSS-Selektor des Map-Containers (z.B. "#map-embed")
- * - data-src: URL von map-only.html (z.B. "https://.../map-only-embed/map-only.html")
- * - data-step-selector: Selektor für Step-Elemente (Default: "[data-lng][data-lat][data-zoom]")
- * - data-scrolly-section: Selektor der Scrolly-Section (Default: ".scrolly-section" oder Parent von data-target)
- * - data-scroll-container: Selektor des Scroll-Containers (Default: null = wird auto-erkannt)
- * - data-position: "fixed" (Default, CMS-tauglich) oder "sticky"
- * - data-offset: Scrollama offset 0–1 (Default: 0.5)
- * - data-debug: "true" für Debug-Logs
- *
- * Voraussetzung: Scrollama muss auf der Host-Seite geladen sein.
+ * - data-target, data-src, data-step-selector, data-scrolly-section
+ * - data-scroll-mode: "capture" (Default) oder "overlay"
+ * - data-scroll-container, data-offset, data-wheel-sensitivity, data-touch-sensitivity
+ * - data-offset-top, data-capture-tolerance, data-debug
  */
 (function () {
   var script = document.currentScript;
@@ -25,11 +20,17 @@
   var stepSelector = script.getAttribute('data-step-selector') || '[data-lng][data-lat][data-zoom]';
   var scrollySectionSelector = script.getAttribute('data-scrolly-section');
   var scrollContainerSelector = script.getAttribute('data-scroll-container');
-  var positionMode = (script.getAttribute('data-position') || 'fixed').toLowerCase();
+  var scrollMode = (script.getAttribute('data-scroll-mode') || 'capture').toLowerCase();
+  var topOffset = parseInt(script.getAttribute('data-offset-top'), 10) || 0;
+  var wheelSensitivity = parseFloat(script.getAttribute('data-wheel-sensitivity'), 10) || 2.5;
+  if (isNaN(wheelSensitivity) || wheelSensitivity <= 0) wheelSensitivity = 2.5;
+  var touchSensitivity = parseFloat(script.getAttribute('data-touch-sensitivity'), 10) || 2;
+  if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
+  var captureTolerance = parseInt(script.getAttribute('data-capture-tolerance'), 10);
+  if (isNaN(captureTolerance) || captureTolerance < 0) captureTolerance = 80;
   var offset = parseFloat(script.getAttribute('data-offset'), 10);
   if (isNaN(offset) || offset < 0 || offset > 1) offset = 0.5;
   var debug = /^(1|true|yes)$/i.test(script.getAttribute('data-debug') || '');
-
   if (!targetSelector || !src) return;
 
   function log() {
@@ -47,70 +48,38 @@
 
   var steps = document.querySelectorAll(stepSelector);
   if (!steps.length) {
-    log('Keine Steps gefunden mit Selektor:', stepSelector);
+    log('Keine Steps gefunden');
     return;
   }
+
+  var stepsWrapper = (container.parentElement && container.parentElement.querySelector('.steps-wrapper')) ||
+    (container.nextElementSibling && container.nextElementSibling.querySelector(stepSelector) ? container.nextElementSibling : null);
 
   var scrollySection = scrollySectionSelector
     ? document.querySelector(scrollySectionSelector)
     : container.closest('.scrolly-section') || container.parentElement;
-  if (scrollySection) {
-    scrollySection.classList.add('maplibre-scrollytelling');
-    if (positionMode === 'fixed') {
-      scrollySection.classList.add('maplibre-scrollytelling-fixed');
-    }
-    scrollySection.style.height = steps.length * 100 + 'vh';
-  }
 
   if (typeof scrollama === 'undefined') {
-    console.warn('[MapOnlyEmbed] Scrollama nicht geladen. Bitte scrollama.min.js einbinden.');
-    return;
+    console.warn('[MapOnlyEmbed] Scrollama nicht geladen.');
   }
 
-  function findScrollContainer() {
-    if (scrollContainerSelector) {
-      return document.querySelector(scrollContainerSelector);
-    }
-    var el = container;
-    while (el && el !== document.body) {
-      el = el.parentElement;
-      if (el) {
+  var iframeOrigin = new URL(src, document.location.href).origin;
+
+  function findScrollContainer(el) {
+    if (scrollContainerSelector) return document.querySelector(scrollContainerSelector);
+    var n = el || container;
+    while (n && n !== document.body) {
+      n = n.parentElement;
+      if (n) {
         try {
-          var s = window.getComputedStyle(el);
-          var ox = s.overflowX, oy = s.overflowY;
-          if ((ox === 'auto' || ox === 'scroll' || oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) {
-            return el;
-          }
+          var s = window.getComputedStyle(n);
+          var o = s.overflowY || s.overflow;
+          if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight)
+            return n;
         } catch (e) {}
       }
     }
     return document.scrollingElement || document.documentElement;
-  }
-
-  var scrollContainer = findScrollContainer();
-  if (!scrollContainer) {
-    log('Scroll-Container nicht gefunden');
-    return;
-  }
-  log('Scroll-Container:', scrollContainer.tagName + (scrollContainer.id ? '#' + scrollContainer.id : ''));
-
-  var iframeOrigin = new URL(src, document.location.href).origin;
-
-  if (positionMode === 'fixed') {
-    container.style.position = 'fixed';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.right = '0';
-    container.style.width = '100%';
-    container.style.height = '100vh';
-    container.style.zIndex = '0';
-    container.style.pointerEvents = 'none';
-  } else {
-    container.style.position = 'sticky';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.width = '100%';
-    container.style.zIndex = '0';
   }
 
   var iframe = document.createElement('iframe');
@@ -120,76 +89,11 @@
   iframe.frameBorder = '0';
   iframe.style.cssText = 'width:100%;min-width:100%;border:none;height:100vh;min-height:400px;display:block;';
 
-  container.appendChild(iframe);
-  if (positionMode === 'fixed') {
-    iframe.style.pointerEvents = 'auto';
-  }
-
-  if (positionMode === 'fixed' && scrollySection) {
-    function setMapVisible(visible) {
-      container.style.visibility = visible ? 'visible' : 'hidden';
-    }
-    var scrollRoot = scrollContainer !== document.scrollingElement && scrollContainer !== document.documentElement
-      ? scrollContainer
-      : null;
-    var io = new IntersectionObserver(
-      function (entries) {
-        setMapVisible(entries[0].isIntersecting);
-      },
-      { root: scrollRoot, threshold: 0 }
-    );
-    io.observe(scrollySection);
-    setMapVisible(false);
-    function checkInitial() {
-      try {
-        var cr = scrollySection.getBoundingClientRect();
-        var inView = scrollRoot
-          ? (function () {
-              var r = scrollRoot.getBoundingClientRect();
-              return cr.bottom > r.top && cr.top < r.bottom;
-            })()
-          : cr.top < window.innerHeight && cr.bottom > 0;
-        setMapVisible(inView);
-      } catch (e) {}
-    }
-    requestAnimationFrame(function () {
-      requestAnimationFrame(checkInitial);
-    });
-  }
-
-  window.addEventListener('resize', function () {
-    iframe.style.height = '100vh';
-  });
-
   function sendFlyTo(lng, lat, zoom, duration) {
-    if (!iframe.contentWindow) return;
-    iframe.contentWindow.postMessage({
-      type: 'flyTo',
-      lng: lng,
-      lat: lat,
-      zoom: zoom,
-      duration: duration || 1200
-    }, iframeOrigin);
-    log('flyTo gesendet', lng, lat, zoom);
+    if (iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'flyTo', lng: lng, lat: lat, zoom: zoom, duration: duration || 1200 }, iframeOrigin);
+    }
   }
-
-  var scroller = scrollama();
-  scroller
-    .setup({
-      step: stepSelector,
-      offset: offset,
-      progress: false,
-      container: scrollContainer
-    })
-    .onStepEnter(function (response) {
-      var el = response.element;
-      var lng = parseFloat(el.getAttribute('data-lng'), 10);
-      var lat = parseFloat(el.getAttribute('data-lat'), 10);
-      var zoom = parseFloat(el.getAttribute('data-zoom'), 10);
-      if (!isNaN(lng) && !isNaN(lat) && !isNaN(zoom)) {
-        sendFlyTo(lng, lat, zoom);
-      }
-    });
 
   iframe.addEventListener('load', function () {
     var first = steps[0];
@@ -197,11 +101,158 @@
       var lng = parseFloat(first.getAttribute('data-lng'), 10);
       var lat = parseFloat(first.getAttribute('data-lat'), 10);
       var zoom = parseFloat(first.getAttribute('data-zoom'), 10);
-      if (!isNaN(lng) && !isNaN(lat) && !isNaN(zoom)) {
-        sendFlyTo(lng, lat, zoom, 0);
-      }
+      if (!isNaN(lng) && !isNaN(lat) && !isNaN(zoom)) sendFlyTo(lng, lat, zoom, 0);
     }
   });
 
-  log('Initialisiert:', steps.length, 'Steps, Container:', targetSelector);
+  if (scrollMode === 'capture' && stepsWrapper) {
+    var pageScroll = findScrollContainer();
+    var embedWrapper = scrollySection || container.parentElement;
+    embedWrapper.classList.add('maplibre-scrollytelling');
+    embedWrapper.classList.add('maplibre-scrollytelling-capture');
+
+    var innerScroll = document.createElement('div');
+    innerScroll.className = 'maplibre-inner-scroll';
+    innerScroll.style.cssText = 'overflow-y:auto;overflow-x:hidden;height:100vh;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;';
+
+    var graphic = document.createElement('div');
+    graphic.className = 'maplibre-graphic';
+    graphic.style.cssText = 'position:sticky;top:0;left:0;width:100%;height:100vh;z-index:0;';
+
+    container.style.cssText = 'width:100%;height:100vh;min-height:400px;';
+    container.appendChild(iframe);
+    graphic.appendChild(container);
+
+    innerScroll.appendChild(graphic);
+    if (stepsWrapper.parentNode === embedWrapper) {
+      embedWrapper.removeChild(stepsWrapper);
+    }
+    innerScroll.appendChild(stepsWrapper);
+
+    embedWrapper.style.cssText = 'position:sticky;top:' + topOffset + 'px;height:100vh;min-height:400px;z-index:10;';
+    embedWrapper.innerHTML = '';
+    embedWrapper.appendChild(innerScroll);
+    var overlay = document.createElement('div');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;z-index:1;';
+    embedWrapper.appendChild(overlay);
+
+    var atTop = true, atBottom = false;
+    var embedReachedDown = false, embedReachedUp = false;
+
+    function updateEmbedReached() {
+      var rect = embedWrapper.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      embedReachedDown = rect.top <= topOffset + captureTolerance && rect.bottom > topOffset;
+      embedReachedUp = rect.bottom >= vh - captureTolerance && rect.top < vh;
+    }
+
+    function updateAtTopBottom() {
+      var st = innerScroll.scrollTop;
+      var sh = innerScroll.scrollHeight;
+      var ch = innerScroll.clientHeight;
+      atTop = st <= 2;
+      atBottom = st + ch >= sh - 2;
+    }
+
+    innerScroll.addEventListener('scroll', function () {
+      updateAtTopBottom();
+    }, { passive: true });
+
+    var scrollOpt = { passive: true };
+    var pageScrollEl = findScrollContainer();
+    if (pageScrollEl) pageScrollEl.addEventListener('scroll', updateEmbedReached, scrollOpt);
+    var node = embedWrapper;
+    while (node && node !== document.body) {
+      node = node.parentElement;
+      if (node) node.addEventListener('scroll', updateEmbedReached, scrollOpt);
+    }
+    window.addEventListener('scroll', updateEmbedReached, scrollOpt);
+    if (document.scrollingElement && document.scrollingElement !== document.body) {
+      document.scrollingElement.addEventListener('scroll', updateEmbedReached, scrollOpt);
+    }
+    window.addEventListener('resize', updateEmbedReached);
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver(function (entries) {
+        if (entries[0].target === embedWrapper) updateEmbedReached();
+      }, { root: null, threshold: [0, 0.01, 0.5, 1] }).observe(embedWrapper);
+    }
+    updateEmbedReached();
+    updateAtTopBottom();
+
+    function shouldCapture(deltaY) {
+      if (atBottom && deltaY > 0) return false;
+      if (atTop && deltaY < 0) return false;
+      if (deltaY > 0) return embedReachedDown;
+      if (deltaY < 0) return embedReachedUp;
+      return false;
+    }
+
+    function handleWheel(e) {
+      updateEmbedReached();
+      if (!shouldCapture(e.deltaY)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      innerScroll.scrollTop += e.deltaY * wheelSensitivity;
+    }
+
+    overlay.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+
+    var touchStartY = 0;
+    overlay.addEventListener('touchstart', function (e) {
+      if (e.changedTouches && e.changedTouches[0]) touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+    overlay.addEventListener('touchmove', function (e) {
+      updateEmbedReached();
+      if (!e.changedTouches || !e.changedTouches[0]) return;
+      var ty = e.changedTouches[0].clientY;
+      var dy = (touchStartY - ty) * touchSensitivity;
+      touchStartY = ty;
+      if (!shouldCapture(dy)) return;
+      e.preventDefault();
+      innerScroll.scrollTop += dy;
+    }, { passive: false });
+
+    var scrollamaContainer = innerScroll;
+    if (typeof scrollama !== 'undefined') {
+      var sc = scrollama();
+      sc.setup({ step: stepSelector, offset: offset, progress: false, container: scrollamaContainer })
+        .onStepEnter(function (r) {
+          var el = r.element;
+          var lng = parseFloat(el.getAttribute('data-lng'), 10);
+          var lat = parseFloat(el.getAttribute('data-lat'), 10);
+          var zoom = parseFloat(el.getAttribute('data-zoom'), 10);
+          if (!isNaN(lng) && !isNaN(lat) && !isNaN(zoom)) sendFlyTo(lng, lat, zoom);
+        });
+    }
+
+    log('Capture-Modus: Initialisiert,', steps.length, 'Steps');
+    return;
+  }
+
+  container.appendChild(iframe);
+  var scrollContainer = findScrollContainer();
+  scrollySection && scrollySection.classList.add('maplibre-scrollytelling');
+  if (scrollySection) scrollySection.style.height = steps.length * 100 + 'vh';
+
+  container.style.position = 'sticky';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100%';
+  container.style.zIndex = '0';
+
+  if (typeof scrollama !== 'undefined') {
+    var sc = scrollama();
+    sc.setup({ step: stepSelector, offset: offset, progress: false, container: scrollContainer })
+      .onStepEnter(function (r) {
+        var el = r.element;
+        var lng = parseFloat(el.getAttribute('data-lng'), 10);
+        var lat = parseFloat(el.getAttribute('data-lat'), 10);
+        var zoom = parseFloat(el.getAttribute('data-zoom'), 10);
+        if (!isNaN(lng) && !isNaN(lat) && !isNaN(zoom)) sendFlyTo(lng, lat, zoom);
+      });
+  }
+
+  log('Overlay-Modus: Initialisiert,', steps.length, 'Steps');
 })();

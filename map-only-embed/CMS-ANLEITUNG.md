@@ -59,11 +59,14 @@ Als **Embed** oder **Custom HTML** einfügen:
 
 | Attribut | Beschreibung |
 |----------|--------------|
-| `data-position` | **"fixed"** (Standard für CMS) – Karte bleibt im Viewport, Steps scrollen darüber. **"sticky"** – klassisches Sticky-Verhalten |
-| `data-scroll-container` | Falls das CMS einen eigenen Scroll-Container hat (z. B. `#article-body`), hier den Selektor angeben. Wird sonst automatisch erkannt. |
-| `data-scrolly-section` | Falls die Scrolly-Section einen anderen Selektor hat |
+| `data-scroll-mode` | **"capture"** (Standard) – Seite scrollen → am Embed einrasten → im Embed scrollen → Seite weiterscrollen. **"overlay"** – Steps overlay die Karte beim Seitenscroll. |
+| `data-scroll-container` | Falls das CMS einen eigenen Scroll-Container hat, hier den Selektor angeben. Wird sonst automatisch erkannt. |
+| `data-offset-top` | Abstand in px vom Viewport-Rand (z. B. "64" bei fixem Header) |
+| `data-wheel-sensitivity` | Mausrad-Sensibilität (Standard: 2.5) |
+| `data-touch-sensitivity` | Touch-Swipe-Sensibilität (Standard: 2) |
+| `data-capture-tolerance` | px-Toleranz für Einrasten (Standard: 80) |
 | `data-offset` | Scrollama-Offset 0–1 (Standard: 0.5) |
-| `data-debug="true"` | Debug-Logs in der Konsole (zeigt u. a. den erkannten Scroll-Container) |
+| `data-debug="true"` | Debug-Logs in der Konsole |
 
 **Beispiel mit eigenem Scroll-Container:**
 ```html
