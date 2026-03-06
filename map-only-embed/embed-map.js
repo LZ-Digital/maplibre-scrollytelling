@@ -27,7 +27,7 @@
   var touchSensitivity = parseFloat(script.getAttribute('data-touch-sensitivity'), 10) || 2;
   if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
   var captureTolerance = parseInt(script.getAttribute('data-capture-tolerance'), 10);
-  if (isNaN(captureTolerance) || captureTolerance < 0) captureTolerance = 80;
+  if (isNaN(captureTolerance) || captureTolerance < 0) captureTolerance = 120;
   var offset = parseFloat(script.getAttribute('data-offset'), 10);
   if (isNaN(offset) || offset < 0 || offset > 1) offset = 0.5;
   var debug = /^(1|true|yes)$/i.test(script.getAttribute('data-debug') || '');
@@ -139,12 +139,27 @@
 
     var atTop = true, atBottom = false;
     var embedReachedDown = false, embedReachedUp = false;
+    var pageScrollEl = findScrollContainer();
 
     function updateEmbedReached() {
       var rect = embedWrapper.getBoundingClientRect();
       var vh = window.innerHeight || document.documentElement.clientHeight;
-      embedReachedDown = rect.top <= topOffset + captureTolerance && rect.bottom > topOffset;
-      embedReachedUp = rect.bottom >= vh - captureTolerance && rect.top < vh;
+      var topThreshold = topOffset + captureTolerance;
+      var bottomThreshold = vh - captureTolerance;
+      embedReachedDown = rect.top <= topThreshold && rect.bottom > topOffset;
+      embedReachedUp = rect.bottom >= bottomThreshold && rect.top < vh;
+    }
+
+    function snapEmbedIntoPlace() {
+      updateEmbedReached();
+      updateAtTopBottom();
+      if (!embedReachedDown) return;
+      var rect = embedWrapper.getBoundingClientRect();
+      var diff = rect.top - topOffset;
+      if (Math.abs(diff) < 2) return;
+      if (atTop && diff > -150 && diff < 150) {
+        pageScrollEl.scrollTop += diff;
+      }
     }
 
     function updateAtTopBottom() {
@@ -160,8 +175,10 @@
     }, { passive: true });
 
     var scrollOpt = { passive: true };
-    var pageScrollEl = findScrollContainer();
-    if (pageScrollEl) pageScrollEl.addEventListener('scroll', updateEmbedReached, scrollOpt);
+    if (pageScrollEl) {
+      pageScrollEl.addEventListener('scroll', updateEmbedReached, scrollOpt);
+      pageScrollEl.addEventListener('scroll', scheduleSnap, scrollOpt);
+    }
     var node = embedWrapper;
     while (node && node !== document.body) {
       node = node.parentElement;
@@ -188,12 +205,25 @@
       return false;
     }
 
+    var snapTimer = null;
+    function scheduleSnap() {
+      if (snapTimer) clearTimeout(snapTimer);
+      snapTimer = setTimeout(function () {
+        snapTimer = null;
+        snapEmbedIntoPlace();
+      }, 100);
+    }
+
     function handleWheel(e) {
       updateEmbedReached();
-      if (!shouldCapture(e.deltaY)) return;
+      if (!shouldCapture(e.deltaY)) {
+        scheduleSnap();
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       innerScroll.scrollTop += e.deltaY * wheelSensitivity;
+      scheduleSnap();
     }
 
     overlay.addEventListener('wheel', handleWheel, { passive: false });
@@ -209,10 +239,15 @@
       var ty = e.changedTouches[0].clientY;
       var dy = (touchStartY - ty) * touchSensitivity;
       touchStartY = ty;
-      if (!shouldCapture(dy)) return;
+      if (!shouldCapture(dy)) {
+        scheduleSnap();
+        return;
+      }
       e.preventDefault();
       innerScroll.scrollTop += dy;
+      scheduleSnap();
     }, { passive: false });
+    overlay.addEventListener('touchend', scheduleSnap, { passive: true });
 
     var scrollamaContainer = innerScroll;
     if (typeof scrollama !== 'undefined') {
