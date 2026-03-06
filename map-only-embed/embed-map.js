@@ -27,7 +27,7 @@
   var touchSensitivity = parseFloat(script.getAttribute('data-touch-sensitivity'), 10) || 2;
   if (isNaN(touchSensitivity) || touchSensitivity <= 0) touchSensitivity = 2;
   var captureTolerance = parseInt(script.getAttribute('data-capture-tolerance'), 10);
-  if (isNaN(captureTolerance) || captureTolerance < 0) captureTolerance = 120;
+  if (isNaN(captureTolerance) || captureTolerance < 0) captureTolerance = 180;
   var offset = parseFloat(script.getAttribute('data-offset'), 10);
   if (isNaN(offset) || offset < 0 || offset > 1) offset = 0.5;
   var debug = /^(1|true|yes)$/i.test(script.getAttribute('data-debug') || '');
@@ -129,7 +129,12 @@
     }
     innerScroll.appendChild(stepsWrapper);
 
-    embedWrapper.style.cssText = 'position:sticky;top:' + topOffset + 'px;height:100vh;min-height:400px;z-index:10;';
+    embedWrapper.style.position = '-webkit-sticky';
+    embedWrapper.style.position = 'sticky';
+    embedWrapper.style.top = topOffset + 'px';
+    embedWrapper.style.height = '100vh';
+    embedWrapper.style.minHeight = '400px';
+    embedWrapper.style.zIndex = '10';
     embedWrapper.innerHTML = '';
     embedWrapper.appendChild(innerScroll);
     var overlay = document.createElement('div');

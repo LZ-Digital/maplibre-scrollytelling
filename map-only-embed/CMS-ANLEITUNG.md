@@ -64,7 +64,7 @@ Als **Embed** oder **Custom HTML** einfügen:
 | `data-offset-top` | Abstand in px vom Viewport-Rand (z. B. "64" bei fixem Header) |
 | `data-wheel-sensitivity` | Mausrad-Sensibilität (Standard: 2.5) |
 | `data-touch-sensitivity` | Touch-Swipe-Sensibilität (Standard: 2) |
-| `data-capture-tolerance` | px-Toleranz für Einrasten (Standard: 120, höher = früheres Einrasten) |
+| `data-capture-tolerance` | px-Toleranz für Einrasten (Standard: 180, höher = früheres Einrasten) |
 | `data-offset` | Scrollama-Offset 0–1 (Standard: 0.5) |
 | `data-debug="true"` | Debug-Logs in der Konsole |
 
