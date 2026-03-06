@@ -125,6 +125,38 @@
     iframe.style.pointerEvents = 'auto';
   }
 
+  if (positionMode === 'fixed' && scrollySection) {
+    function setMapVisible(visible) {
+      container.style.visibility = visible ? 'visible' : 'hidden';
+    }
+    var scrollRoot = scrollContainer !== document.scrollingElement && scrollContainer !== document.documentElement
+      ? scrollContainer
+      : null;
+    var io = new IntersectionObserver(
+      function (entries) {
+        setMapVisible(entries[0].isIntersecting);
+      },
+      { root: scrollRoot, threshold: 0 }
+    );
+    io.observe(scrollySection);
+    setMapVisible(false);
+    function checkInitial() {
+      try {
+        var cr = scrollySection.getBoundingClientRect();
+        var inView = scrollRoot
+          ? (function () {
+              var r = scrollRoot.getBoundingClientRect();
+              return cr.bottom > r.top && cr.top < r.bottom;
+            })()
+          : cr.top < window.innerHeight && cr.bottom > 0;
+        setMapVisible(inView);
+      } catch (e) {}
+    }
+    requestAnimationFrame(function () {
+      requestAnimationFrame(checkInitial);
+    });
+  }
+
   window.addEventListener('resize', function () {
     iframe.style.height = '100vh';
   });
