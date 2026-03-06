@@ -137,93 +137,41 @@
     overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;z-index:1;';
     embedWrapper.appendChild(overlay);
 
-    var atTop = true, atBottom = false;
-    var embedReachedDown = false, embedReachedUp = false;
-    var pageScrollEl = findScrollContainer();
+    /* Rein positionsbasierte Logik – keine zeitlichen Komponenten.
+     * Runter scrollen: Einrasten, wenn oberer Rand des Embeds Position topLine erreicht hat.
+     * Hoch scrollen: Einrasten, wenn unterer Rand des Embeds Position bottomLine erreicht hat. */
+    var topLine = topOffset;
+    var vh = function () { return window.innerHeight || document.documentElement.clientHeight; };
+    var bottomLine = function () { return vh() - topOffset; };
 
-    function updateEmbedReached() {
-      var rect = embedWrapper.getBoundingClientRect();
-      var vh = window.innerHeight || document.documentElement.clientHeight;
-      var topThreshold = topOffset + captureTolerance;
-      var bottomThreshold = vh - captureTolerance;
-      embedReachedDown = rect.top <= topThreshold && rect.bottom > topOffset;
-      embedReachedUp = rect.bottom >= bottomThreshold && rect.top < vh;
-    }
-
-    function snapEmbedIntoPlace() {
-      updateEmbedReached();
-      updateAtTopBottom();
-      if (!embedReachedDown) return;
-      var rect = embedWrapper.getBoundingClientRect();
-      var diff = rect.top - topOffset;
-      if (Math.abs(diff) < 2) return;
-      if (atTop && diff > -150 && diff < 150) {
-        pageScrollEl.scrollTop += diff;
-      }
-    }
-
-    function updateAtTopBottom() {
+    function getAtTopBottom() {
       var st = innerScroll.scrollTop;
       var sh = innerScroll.scrollHeight;
       var ch = innerScroll.clientHeight;
-      atTop = st <= 2;
-      atBottom = st + ch >= sh - 2;
+      return { atTop: st <= 2, atBottom: st + ch >= sh - 2 };
     }
-
-    innerScroll.addEventListener('scroll', function () {
-      updateAtTopBottom();
-    }, { passive: true });
-
-    var scrollOpt = { passive: true };
-    if (pageScrollEl) {
-      pageScrollEl.addEventListener('scroll', updateEmbedReached, scrollOpt);
-      pageScrollEl.addEventListener('scroll', scheduleSnap, scrollOpt);
-    }
-    var node = embedWrapper;
-    while (node && node !== document.body) {
-      node = node.parentElement;
-      if (node) node.addEventListener('scroll', updateEmbedReached, scrollOpt);
-    }
-    window.addEventListener('scroll', updateEmbedReached, scrollOpt);
-    if (document.scrollingElement && document.scrollingElement !== document.body) {
-      document.scrollingElement.addEventListener('scroll', updateEmbedReached, scrollOpt);
-    }
-    window.addEventListener('resize', updateEmbedReached);
-    if (typeof IntersectionObserver !== 'undefined') {
-      new IntersectionObserver(function (entries) {
-        if (entries[0].target === embedWrapper) updateEmbedReached();
-      }, { root: null, threshold: [0, 0.01, 0.5, 1] }).observe(embedWrapper);
-    }
-    updateEmbedReached();
-    updateAtTopBottom();
 
     function shouldCapture(deltaY) {
-      if (atBottom && deltaY > 0) return false;
-      if (atTop && deltaY < 0) return false;
-      if (deltaY > 0) return embedReachedDown;
-      if (deltaY < 0) return embedReachedUp;
+      var rect = embedWrapper.getBoundingClientRect();
+      var pos = getAtTopBottom();
+      var embedTop = rect.top;
+      var embedBottom = rect.bottom;
+      if (deltaY > 0) {
+        if (pos.atBottom) return false;
+        return embedTop <= topLine + captureTolerance;
+      }
+      if (deltaY < 0) {
+        if (pos.atTop) return false;
+        return embedBottom >= bottomLine() - captureTolerance;
+      }
       return false;
     }
 
-    var snapTimer = null;
-    function scheduleSnap() {
-      if (snapTimer) clearTimeout(snapTimer);
-      snapTimer = setTimeout(function () {
-        snapTimer = null;
-        snapEmbedIntoPlace();
-      }, 100);
-    }
-
     function handleWheel(e) {
-      updateEmbedReached();
-      if (!shouldCapture(e.deltaY)) {
-        scheduleSnap();
-        return;
-      }
+      if (!shouldCapture(e.deltaY)) return;
       e.preventDefault();
       e.stopPropagation();
       innerScroll.scrollTop += e.deltaY * wheelSensitivity;
-      scheduleSnap();
     }
 
     overlay.addEventListener('wheel', handleWheel, { passive: false });
@@ -234,20 +182,14 @@
       if (e.changedTouches && e.changedTouches[0]) touchStartY = e.changedTouches[0].clientY;
     }, { passive: true });
     overlay.addEventListener('touchmove', function (e) {
-      updateEmbedReached();
       if (!e.changedTouches || !e.changedTouches[0]) return;
       var ty = e.changedTouches[0].clientY;
       var dy = (touchStartY - ty) * touchSensitivity;
       touchStartY = ty;
-      if (!shouldCapture(dy)) {
-        scheduleSnap();
-        return;
-      }
+      if (!shouldCapture(dy)) return;
       e.preventDefault();
       innerScroll.scrollTop += dy;
-      scheduleSnap();
     }, { passive: false });
-    overlay.addEventListener('touchend', scheduleSnap, { passive: true });
 
     var scrollamaContainer = innerScroll;
     if (typeof scrollama !== 'undefined') {
