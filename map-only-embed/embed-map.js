@@ -151,7 +151,7 @@
 
     /**
      * Prüft synchron, ob der embedWrapper tatsächlich am Viewport-Rand klebt.
-     * 5 px Toleranz für Float-Ungenauigkeiten; kein fuzzy Vorausgreifen mehr.
+     * 5 px Toleranz für Float-Ungenauigkeiten.
      */
     function isStuck() {
       return embedWrapper.getBoundingClientRect().top <= topOffset + 5;
@@ -160,15 +160,52 @@
     function shouldCapture(deltaY) {
       if (!isStuck()) return false;
       var pos = getAtTopBottom();
-      if (deltaY > 0 && pos.atBottom) return false; /* innerScroll-Ende → Seite weiter */
-      if (deltaY < 0 && pos.atTop)    return false; /* innerScroll-Anfang → Seite zurück */
+      if (deltaY > 0 && pos.atBottom) return false;
+      if (deltaY < 0 && pos.atTop)    return false;
       return true;
     }
 
+    /* ── CSS-Level Scroll-Lock ───────────────────────────────────────────
+     * e.preventDefault() schützt vor dem Browser-Default, greift aber erst
+     * im Main-Thread – bei schnellem Trackpad-Momentum kann der Compositor
+     * bereits gescrollt haben. overflow:hidden auf dem Seiten-Scroll-Container
+     * wirkt auf CSS-Ebene und ist der zuverlässigste Schutz.
+     * ─────────────────────────────────────────────────────────────────── */
+    var scrollLocked = false;
+    var savedScrollElOverflow = '';
+    var savedScrollElPaddingRight = '';
+
+    function lockPageScroll() {
+      if (scrollLocked) return;
+      /* Scrollbar-Breite vor dem Verstecken messen → kein Layout-Shift */
+      var scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+      savedScrollElOverflow    = pageScroll.style.overflow;
+      savedScrollElPaddingRight = pageScroll.style.paddingRight;
+      pageScroll.style.overflow = 'hidden';
+      if (scrollbarW > 0) {
+        pageScroll.style.paddingRight =
+          (parseFloat(window.getComputedStyle(pageScroll).paddingRight) + scrollbarW) + 'px';
+      }
+      scrollLocked = true;
+      log('scroll locked');
+    }
+
+    function unlockPageScroll() {
+      if (!scrollLocked) return;
+      pageScroll.style.overflow     = savedScrollElOverflow;
+      pageScroll.style.paddingRight = savedScrollElPaddingRight;
+      scrollLocked = false;
+      log('scroll unlocked');
+    }
+
     function handleWheel(e) {
-      if (!shouldCapture(e.deltaY)) return;
-      e.preventDefault();
-      e.stopPropagation();
+      if (!shouldCapture(e.deltaY)) {
+        unlockPageScroll();
+        return;
+      }
+      lockPageScroll();        /* CSS-Lock VOR dem Browser-Default */
+      e.preventDefault();      /* Browser-Default verhindern         */
+      e.stopPropagation();     /* Kein weiteres Bubbling             */
       innerScroll.scrollTop += e.deltaY * wheelSensitivity;
     }
 
@@ -184,10 +221,13 @@
       var ty = e.changedTouches[0].clientY;
       var dy = (touchStartY - ty) * touchSensitivity;
       touchStartY = ty;
-      if (!shouldCapture(dy)) return;
+      if (!shouldCapture(dy)) { unlockPageScroll(); return; }
+      lockPageScroll();
       e.preventDefault();
       innerScroll.scrollTop += dy;
     }, { passive: false });
+    overlay.addEventListener('touchend',   unlockPageScroll, { passive: true });
+    overlay.addEventListener('touchcancel', unlockPageScroll, { passive: true });
 
     var scrollamaContainer = innerScroll;
     if (typeof scrollama !== 'undefined') {
