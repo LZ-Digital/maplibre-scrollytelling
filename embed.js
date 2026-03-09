@@ -74,6 +74,47 @@
   try { iframeOrigin = new URL(src, document.location.href).origin; }
   catch (e) { iframeOrigin = '*'; }
 
+  /* ── Page scroll lock: CSS-Ebene verhindert Compositor-Thread-Leak ── */
+  var scrollLocked = false;
+  var savedScrollElOverflow = '';
+  var savedScrollElPaddingRight = '';
+
+  /* Seiten-Scroll-Container: erstes scrollbares Eltern-Element oder documentElement */
+  var pageScrollEl = (function () {
+    var el = container.parentElement;
+    while (el && el !== document.documentElement) {
+      try {
+        var s = window.getComputedStyle(el);
+        var o = s.overflowY || s.overflow;
+        if ((o === 'auto' || o === 'scroll') && el.scrollHeight > el.clientHeight) return el;
+      } catch (e2) {}
+      el = el.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }());
+
+  function lockPageScroll() {
+    if (scrollLocked) return;
+    var scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+    savedScrollElOverflow     = pageScrollEl.style.overflow;
+    savedScrollElPaddingRight = pageScrollEl.style.paddingRight;
+    pageScrollEl.style.overflow = 'hidden';
+    if (scrollbarW > 0) {
+      pageScrollEl.style.paddingRight =
+        (parseFloat(window.getComputedStyle(pageScrollEl).paddingRight) + scrollbarW) + 'px';
+    }
+    scrollLocked = true;
+    log('scroll locked');
+  }
+
+  function unlockPageScroll() {
+    if (!scrollLocked) return;
+    pageScrollEl.style.overflow     = savedScrollElOverflow;
+    pageScrollEl.style.paddingRight = savedScrollElPaddingRight;
+    scrollLocked = false;
+    log('scroll unlocked');
+  }
+
   /* ── Scroll-Zustand: same-origin direkt, cross-origin per postMessage */
 
   /** Inneres Scroll-Element des iframes (nur same-origin). */
@@ -154,7 +195,11 @@
   }
 
   function handleWheel(e) {
-    if (!shouldCapture(e.deltaY)) return;
+    if (!shouldCapture(e.deltaY)) {
+      unlockPageScroll();
+      return;
+    }
+    lockPageScroll();
     e.preventDefault();
     e.stopPropagation();
     var scaled = e.deltaY * wheelSensitivity;
@@ -180,10 +225,14 @@
     var ty = e.changedTouches[0].clientY;
     var deltaY = (touchStartY - ty) * touchSensitivity;
     touchStartY = ty;
-    if (!shouldCapture(deltaY)) return;
+    if (!shouldCapture(deltaY)) { unlockPageScroll(); return; }
+    lockPageScroll();
     e.preventDefault();
     scrollIframe(deltaY);
   }, { passive: false, capture: true });
+
+  overlay.addEventListener('touchend',    unlockPageScroll, { passive: true });
+  overlay.addEventListener('touchcancel', unlockPageScroll, { passive: true });
 
   /* ── Resize ──────────────────────────────────────────────────────── */
   window.addEventListener('resize', function () {
