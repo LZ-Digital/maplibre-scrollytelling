@@ -142,13 +142,6 @@
     overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto;z-index:1;';
     embedWrapper.appendChild(overlay);
 
-    /* Rein positionsbasierte Logik – keine zeitlichen Komponenten.
-     * Runter scrollen: Einrasten, wenn oberer Rand des Embeds Position topLine erreicht hat.
-     * Hoch scrollen: Einrasten, wenn unterer Rand des Embeds Position bottomLine erreicht hat. */
-    var topLine = topOffset;
-    var vh = function () { return window.innerHeight || document.documentElement.clientHeight; };
-    var bottomLine = function () { return vh() - topOffset; };
-
     function getAtTopBottom() {
       var st = innerScroll.scrollTop;
       var sh = innerScroll.scrollHeight;
@@ -156,20 +149,20 @@
       return { atTop: st <= 2, atBottom: st + ch >= sh - 2 };
     }
 
+    /**
+     * Prüft synchron, ob der embedWrapper tatsächlich am Viewport-Rand klebt.
+     * 5 px Toleranz für Float-Ungenauigkeiten; kein fuzzy Vorausgreifen mehr.
+     */
+    function isStuck() {
+      return embedWrapper.getBoundingClientRect().top <= topOffset + 5;
+    }
+
     function shouldCapture(deltaY) {
-      var rect = embedWrapper.getBoundingClientRect();
+      if (!isStuck()) return false;
       var pos = getAtTopBottom();
-      var embedTop = rect.top;
-      var embedBottom = rect.bottom;
-      if (deltaY > 0) {
-        if (pos.atBottom) return false;
-        return embedTop <= topLine + captureTolerance;
-      }
-      if (deltaY < 0) {
-        if (pos.atTop) return false;
-        return embedBottom >= bottomLine() - captureTolerance;
-      }
-      return false;
+      if (deltaY > 0 && pos.atBottom) return false; /* innerScroll-Ende → Seite weiter */
+      if (deltaY < 0 && pos.atTop)    return false; /* innerScroll-Anfang → Seite zurück */
+      return true;
     }
 
     function handleWheel(e) {
