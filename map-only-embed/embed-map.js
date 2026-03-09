@@ -154,7 +154,11 @@
      * 5 px Toleranz für Float-Ungenauigkeiten.
      */
     function isStuck() {
-      return embedWrapper.getBoundingClientRect().top <= topOffset + 5;
+      /* Nur true, wenn der obere Rand exakt am sticky-Offset liegt (±5 px).
+       * rect.top < 0 bedeutet: Element ist bereits über den Viewport hinaus
+       * gescrollt (un-stuck) → kein Lock beim Hochscrollen auslösen. */
+      var top = embedWrapper.getBoundingClientRect().top;
+      return top >= topOffset - 5 && top <= topOffset + 5;
     }
 
     function shouldCapture(deltaY) {
